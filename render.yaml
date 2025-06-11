@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: php-pdf-sign
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
