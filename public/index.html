@@ -34,8 +34,20 @@
                 <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name" required>
               </div>
 
-              <div class="mb-3">
+              <div class="mb-3 age-field">
                 <input type="number" class="form-control" id="age" name="age" placeholder="Age" required>
+              </div>
+
+              <div class="mb-3 dob-field" style="display: none;">
+                <input type="date" class="form-control" id="dob" name="dob" placeholder="Date of Birth" style="text-transform:uppercase;">
+              </div>
+
+              <div class="mb-3 customer-fields report-type-field" style="display: none;">
+                <select class="form-select" id="reportType" name="reportType" title="Report Type">
+                  <option value="" selected>Report Type</option>
+                  <option value="deposit">Deposit</option>
+                  <option value="cancel">Cancel</option>
+                </select>
               </div>
 
               <div class="mb-3">
@@ -81,11 +93,24 @@
                     <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="customerSigCanvas">Clear</button>
                   </div>
                 </div>
+
+                <!-- Witness fields for Customer -->
+                <div class="mb-3 witness-name-field">
+                  <input type="text" class="form-control" id="customerWitnessName" name="customerWitnessName" placeholder="Witness Name">
+                </div>
+
+                <div class="mb-3 witness-signature-field position-relative sigCanvas-container">
+                  <canvas id="customerWitnessSigCanvas" class="sigCanvas"></canvas>
+                  <div class="mt-1 text-end">
+                    <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="customerWitnessSigCanvas">Clear</button>
+                  </div>
+                </div>
               </div>
 
-              <input type="hidden" name="staffSignature" id="staffSignature" required>
+              <input type="hidden" name="staffSignature" id="staffSignature">
               <input type="hidden" name="witnessSignature" id="witnessSignature">
-              <input type="hidden" name="customerSignature" id="customerSignature" required>
+              <input type="hidden" name="customerSignature" id="customerSignature">
+              <input type="hidden" name="customerWitnessSignature" id="customerWitnessSignature">
               <input type="hidden" name="userType" id="hiddenUserType">
 
               <button type="submit" class="btn btn-primary w-100">Generate PDF</button>

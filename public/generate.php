@@ -40,6 +40,8 @@ $userType = isset($_POST['userType']) ? sanitizeInput($_POST['userType']) : null
 $fullName = isset($_POST['fullName']) ? sanitizeInput($_POST['fullName']) : '';
 $age = isset($_POST['age']) ? sanitizeInput($_POST['age']) : '';
 $reportNotes = isset($_POST['reportNotes']) ? sanitizeInput($_POST['reportNotes']) : '';
+$dob = isset($_POST['dob']) ? sanitizeInput($_POST['dob']) : ''; // Get DOB for age calculation if needed for PDF
+$reportType = isset($_POST['reportType']) ? sanitizeInput($_POST['reportType']) : ''; // Get report type
 
 if (!$userType || !$fullName || !$reportNotes) {
     die(toPdfEncoding("Missing required general information (User Type, Full Name, or Report Notes)."));
@@ -72,11 +74,24 @@ $pdf->Cell(30, $lineHeight, toPdfEncoding('Full Name:'));
 $pdf->SetFont($fontFamily, '', $baseFontSize);
 $pdf->MultiCell(0, $lineHeight, toPdfEncoding($fullName));
 
-if (!empty($age)) {
+// Display DOB for customer, Age for staff
+if ($userType === 'customer' && !empty($dob)) {
+    $pdf->SetFont($fontFamily, 'B', $baseFontSize);
+    $pdf->Cell(30, $lineHeight, toPdfEncoding('DOB:'));
+    $pdf->SetFont($fontFamily, '', $baseFontSize);
+    $pdf->MultiCell(0, $lineHeight, toPdfEncoding(date('d/m/Y', strtotime($dob))));
+} elseif ($userType === 'staff' && !empty($age)) {
     $pdf->SetFont($fontFamily, 'B', $baseFontSize);
     $pdf->Cell(30, $lineHeight, toPdfEncoding('Age:'));
     $pdf->SetFont($fontFamily, '', $baseFontSize);
     $pdf->MultiCell(0, $lineHeight, toPdfEncoding($age));
+}
+
+if ($userType === 'customer' && !empty($reportType)) {
+    $pdf->SetFont($fontFamily, 'B', $baseFontSize);
+    $pdf->Cell(30, $lineHeight, toPdfEncoding('Report Type:'));
+    $pdf->SetFont($fontFamily, '', $baseFontSize);
+    $pdf->MultiCell(0, $lineHeight, toPdfEncoding(ucfirst($reportType)));
 }
 
 $pdf->SetFont($fontFamily, 'B', $baseFontSize);
@@ -97,6 +112,7 @@ $pdf->Ln($lineHeight * 1.5);
 $signatureFilesToUnlink = [];
 $leftMargin = $pdf->GetX();
 $pageContentWidth = $pdf->GetPageWidth() - ($leftMargin * 2); // Usable width within margins
+$signingDate = date('d/m/Y'); // Get current date for signing
 
 if ($userType === 'staff') {
     $staffType = isset($_POST['staffType']) ? sanitizeInput($_POST['staffType']) : '';
@@ -138,6 +154,9 @@ if ($userType === 'staff') {
         $pdf->SetX($currentX);
         $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("(" . ucwords(str_replace('-', ' ', $staffType)) . ")"), 0, 'L');
     }
+    $pdf->SetX($currentX);
+    $pdf->SetFont($fontFamily, 'I', $baseFontSize - 3); // Italic, smaller font for date
+    $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("Date: " . $signingDate), 0, 'L');
 
     // Witness Signature (Right Column)
     $currentX = $leftMargin + $columnWidth + 10; 
@@ -149,6 +168,9 @@ if ($userType === 'staff') {
         $pdf->SetX($currentX);
         $pdf->SetFont($fontFamily, '', $baseFontSize - 2);
         $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding($witnessName), 0, 'L');
+        $pdf->SetX($currentX);
+        $pdf->SetFont($fontFamily, 'I', $baseFontSize - 3);
+        $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("Date: " . $signingDate), 0, 'L');
     } elseif (empty($witnessName) && !empty($witnessSignatureB64)) {
         $pdf->SetXY($currentX, $yPosBeforeSignatures + $textBlockYOffset);
         $pdf->SetFont($fontFamily, '', $baseFontSize - 2);
@@ -158,30 +180,61 @@ if ($userType === 'staff') {
 
 } elseif ($userType === 'customer') {
     $customerSignatureB64 = isset($_POST['customerSignature']) ? $_POST['customerSignature'] : null;
+    $customerWitnessName = isset($_POST['customerWitnessName']) ? sanitizeInput($_POST['customerWitnessName']) : '';
+    $customerWitnessSignatureB64 = isset($_POST['customerWitnessSignature']) ? $_POST['customerWitnessSignature'] : null;
+
     if (!$customerSignatureB64) {
         die(toPdfEncoding("Missing Customer Signature."));
     }
     $customerSigFile = decodeSignature($customerSignatureB64, 'customer_signature.png');
     if ($customerSigFile) $signatureFilesToUnlink[] = $customerSigFile;
 
-    $yPosBeforeSignature = $pdf->GetY();
-    $sigWidth = $pageContentWidth * 0.6; // Signature width relative to content width
-    $sigHeight = 35; // Height for customer signature
-    // $sigX = $leftMargin + ($pageContentWidth - $sigWidth) / 2; // Center the signature block
-    $sigX = $leftMargin; // Align signature block to the left margin
-
-    if ($customerSigFile) {
-        $pdf->Image($customerSigFile, $sigX, $yPosBeforeSignature, $sigWidth, $sigHeight);
+    $customerWitnessSigFile = null;
+    if (!empty($customerWitnessSignatureB64) && !empty($customerWitnessName)) {
+        $customerWitnessSigFile = decodeSignature($customerWitnessSignatureB64, 'customer_witness_signature.png');
+        if ($customerWitnessSigFile) $signatureFilesToUnlink[] = $customerWitnessSigFile;
     }
-    $pdf->SetY($yPosBeforeSignature + $sigHeight + 2); // Move below signature
-    $pdf->SetX($sigX); // Set X position to the start of the signature for the labels
+
+    $yPosBeforeSignatures = $pdf->GetY();
+    $columnWidth = ($pageContentWidth / 2) - 5; 
+    $sigHeight = 30; 
+    $textBlockYOffset = $sigHeight + 2; 
+    $lineSpacingForNames = $lineHeight - 1;
+
+    // Customer Signature (Left Column)
+    $currentX = $leftMargin;
+    if ($customerSigFile) {
+        $pdf->Image($customerSigFile, $currentX, $yPosBeforeSignatures, $columnWidth, $sigHeight);
+    }
+    $pdf->SetXY($currentX, $yPosBeforeSignatures + $textBlockYOffset);
     $pdf->SetFont($fontFamily, 'B', $baseFontSize - 2);
-    // Use Cell with width for left alignment, not 0 for full width centered
-    $pdf->Cell($sigWidth, $lineHeight - 2, toPdfEncoding("Customer Signature"), 0, 1, 'L'); 
-    $pdf->SetX($sigX);
+    $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("Customer Signature"), 0, 'L');
+    $pdf->SetX($currentX);
     $pdf->SetFont($fontFamily, '', $baseFontSize - 2);
-    $pdf->Cell($sigWidth, $lineHeight - 2, toPdfEncoding($fullName), 0, 1, 'L'); 
-    $pdf->Ln($lineHeight * 2); 
+    $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding($fullName), 0, 'L');
+    $pdf->SetX($currentX);
+    $pdf->SetFont($fontFamily, 'I', $baseFontSize - 3);
+    $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("Date: " . $signingDate), 0, 'L');
+
+    // Customer Witness Signature (Right Column)
+    $currentX = $leftMargin + $columnWidth + 10;
+    if ($customerWitnessSigFile && !empty($customerWitnessName)) {
+        $pdf->Image($customerWitnessSigFile, $currentX, $yPosBeforeSignatures, $columnWidth, $sigHeight);
+        $pdf->SetXY($currentX, $yPosBeforeSignatures + $textBlockYOffset);
+        $pdf->SetFont($fontFamily, 'B', $baseFontSize - 2);
+        $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("Witness Signature"), 0, 'L');
+        $pdf->SetX($currentX);
+        $pdf->SetFont($fontFamily, '', $baseFontSize - 2);
+        $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding($customerWitnessName), 0, 'L');
+        $pdf->SetX($currentX);
+        $pdf->SetFont($fontFamily, 'I', $baseFontSize - 3);
+        $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("Date: " . $signingDate), 0, 'L');
+    } elseif (empty($customerWitnessName) && !empty($customerWitnessSignatureB64)) {
+        $pdf->SetXY($currentX, $yPosBeforeSignatures + $textBlockYOffset); // Use current Y for this message
+        $pdf->SetFont($fontFamily, '', $baseFontSize - 2);
+        $pdf->MultiCell($columnWidth, $lineSpacingForNames, toPdfEncoding("Witness signature provided without name."), 0, 'L');
+    }
+    $pdf->Ln($sigHeight + $lineHeight * 3); // Ensure enough space after the signature block
 }
 
 // --- Cleanup temporary signature files ---
