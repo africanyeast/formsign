@@ -59,7 +59,8 @@ h5{
 .staff-fields,
 .customer-fields,
 .witness-section, 
-.staff-type-fields {
+.staff-type-fields,
+.customer-witness-position-field {
   display: none;
 }
 

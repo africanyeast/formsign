@@ -122,12 +122,22 @@ function startDrawing(e, canvasId) {
   currentDrawingCtx.beginPath();
   currentDrawingCtx.moveTo(pos.x, pos.y);
 
+  // Set signature color based on position for both staff and customer witness
   if (canvasId === 'staffSigCanvas') {
     const staffType = document.getElementById('staffType').value;
     switch (staffType) {
       case 'supervisor': currentDrawingCtx.strokeStyle = 'blue'; break;
       case 'manager': currentDrawingCtx.strokeStyle = 'red'; break;
       case 'director': currentDrawingCtx.strokeStyle = 'green'; break;
+      default: currentDrawingCtx.strokeStyle = 'black';
+    }
+  } else if (canvasId === 'customerWitnessSigCanvas') {
+    const customerWitnessPosition = document.getElementById('customerWitnessPosition').value;
+    switch (customerWitnessPosition) {
+      case 'supervisor': currentDrawingCtx.strokeStyle = 'blue'; break;
+      case 'manager': currentDrawingCtx.strokeStyle = 'red'; break;
+      case 'director': currentDrawingCtx.strokeStyle = 'green'; break;
+      case 'sales': currentDrawingCtx.strokeStyle = 'orange'; break;
       default: currentDrawingCtx.strokeStyle = 'black';
     }
   } else {
@@ -231,6 +241,7 @@ function toggleFields() {
   const staffTypeFields = document.querySelector('.staff-type-fields');
   const witnessSection = document.querySelector('.witness-section'); // Staff witness section
   const customerWitnessNameField = document.getElementById('customerWitnessName').parentNode; // Customer witness name
+  const customerWitnessPositionField = document.querySelector('.customer-witness-position-field'); // Customer witness position
   const customerWitnessSigField = document.getElementById('customerWitnessSigCanvas').parentNode.parentNode; // Customer witness signature
 
   const ageField = document.querySelector('.age-field');
@@ -243,6 +254,7 @@ function toggleFields() {
   const witnessSignatureInput = document.getElementById('witnessSignature'); // Staff witness
   const customerWitnessSignatureInput = document.getElementById('customerWitnessSignature'); // Customer witness
   const staffTypeInput = document.getElementById('staffType');
+  const customerWitnessPositionInput = document.getElementById('customerWitnessPosition'); // Customer witness position
   const witnessNameInput = document.getElementById('witnessName'); // Staff witness name
   const customerWitnessNameInput = document.getElementById('customerWitnessName'); // Customer witness name
   const ageInput = document.getElementById('age');
@@ -255,6 +267,7 @@ function toggleFields() {
   if (staffTypeFields) staffTypeFields.style.display = 'none';
   if (witnessSection) witnessSection.style.display = 'none';
   if (customerWitnessNameField) customerWitnessNameField.style.display = 'none';
+  if (customerWitnessPositionField) customerWitnessPositionField.style.display = 'none';
   if (customerWitnessSigField) customerWitnessSigField.style.display = 'none';
   if (ageField) ageField.style.display = 'block'; // Default for age
   if (dobField) dobField.style.display = 'none';   // Default for DOB
@@ -264,6 +277,7 @@ function toggleFields() {
   if (staffSignatureInput) staffSignatureInput.required = false;
   if (customerSignatureInput) customerSignatureInput.required = false;
   if (staffTypeInput) staffTypeInput.required = false;
+  if (customerWitnessPositionInput) customerWitnessPositionInput.required = false;
   if (witnessNameInput) witnessNameInput.required = false; 
   if (customerWitnessNameInput) customerWitnessNameInput.required = false;
   if (ageInput) ageInput.required = true; // Default for age
@@ -301,6 +315,7 @@ function toggleFields() {
     } else if (selectedUserType === 'customer') {
       if (customerFields) customerFields.style.display = 'block';
       if (customerWitnessNameField) customerWitnessNameField.style.display = 'block';
+      if (customerWitnessPositionField) customerWitnessPositionField.style.display = 'block';
       if (customerWitnessSigField) customerWitnessSigField.style.display = 'block';
       if (ageField) ageField.style.display = 'none';
       if (dobField) dobField.style.display = 'block';

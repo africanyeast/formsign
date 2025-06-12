@@ -34,6 +34,16 @@
                 <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name" required>
               </div>
 
+              <!-- Add Subject field -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject" required>
+              </div>
+              
+              <!-- Add Place field -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="place" name="place" placeholder="Place" required>
+              </div>
+
               <div class="mb-3 age-field">
                 <input type="number" class="form-control" id="age" name="age" placeholder="Age" required>
               </div>
@@ -97,6 +107,17 @@
                 <!-- Witness fields for Customer -->
                 <div class="mb-3 witness-name-field">
                   <input type="text" class="form-control" id="customerWitnessName" name="customerWitnessName" placeholder="Witness Name">
+                </div>
+
+                <!-- Add position select for customer witness -->
+                <div class="mb-3 customer-witness-position-field">
+                  <select class="form-select" id="customerWitnessPosition" name="customerWitnessPosition" title="Witness Position">
+                    <option value="" selected>Witness Position</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="manager">Manager</option>
+                    <option value="director">Director</option>
+                    <option value="sales">Sales</option>
+                  </select>
                 </div>
 
                 <div class="mb-3 witness-signature-field position-relative sigCanvas-container">
