@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statement of a Customer</title>
+    <style>
+        @page {
+            margin: 20mm;
+            size: A4;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.2;
+            margin: 0;
+            padding: 0;
+            color: black;
+        }
+        
+        .header {
+            display: table;
+            width: 100%;
+            padding: 20px 0 0;
+        }
+        
+        .header-left {
+            display: table-cell;
+            width: 10%;
+            vertical-align: top;
+        }
+        
+        .logo {
+            width: 100px;
+            height: 50px;
+        }
+        
+        .header-center {
+            display: table-cell;
+            width: 60%;
+            vertical-align: top;
+            text-align: left;
+        }
+        
+        .header-right {
+            display: table-cell;
+            width: 30%;
+            vertical-align: top;
+            text-align: right;
+        }
+        
+        .form-title {
+            font-size: 10pt;
+            font-weight: bold;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .main-title {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 5px 0 0 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .form-number {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .form-version {
+            font-size: 8pt;
+            margin: 2px 0 0 0;
+        }
+        
+        .divider {
+            border-top: 3px solid black;
+            margin: 20px 0 15px 0;
+        }
+        
+        .info-section {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border: 1px solid black;
+        }
+        
+        .info-row {
+            display: table;
+            width: 100%;
+            margin: 0;
+            border-collapse: collapse;
+        }
+        
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid black;
+        }
+        
+        .info-label {
+            display: table-cell;
+            width: 15%;
+            padding: 6px 8px;
+            background-color: #f0f0f0;
+            border-right: 1px solid black;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+        
+        .info-value {
+            display: table-cell;
+            padding: 6px 8px;
+            vertical-align: middle;
+        }
+        
+        .name-row {
+            border: 1px solid black;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .name-label {
+            display: inline-block;
+            width: 15%;
+            padding: 6px 8px;
+            background-color: #f0f0f0;
+            border-right: 1px solid black;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+        
+        .name-value {
+            display: inline-block;
+            padding: 6px 8px;
+            vertical-align: middle;
+            width: calc(80% - 16px);
+        }
+        
+        .states-section {
+            margin: 20px 0;
+        }
+        
+        .states-title {
+            font-weight: bold;
+            font-size: 11pt;
+            margin-bottom: 10px;
+        }
+        
+        .statement-list {
+            list-style: decimal;
+            margin-left: 0;
+            padding-left: 20px;
+        }
+        
+        .statement-list li {
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        
+        .signature-section {
+            position: absolute;
+            bottom: 30mm;
+            left: 0;
+            right: 0;
+            display: table;
+            width: 100%;
+        }
+        
+        .witness-column {
+            display: table-cell;
+            width: 45%;
+            vertical-align: bottom;
+            padding-right: 5%;
+        }
+        
+        .signature-column {
+            display: table-cell;
+            width: 45%;
+            vertical-align: bottom;
+            padding-left: 5%;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid black;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+        
+        .signature-label {
+            font-size: 10pt;
+            margin-bottom: 2px;
+        }
+        
+        .page-number {
+            position: absolute;
+            bottom: 10mm;
+            right: 0;
+            font-size: 9pt;
+        }
+        
+        /* mPDF specific styles */
+        .placeholder {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <img src="images/logo.png" alt="Logo" class="logo">
+        </div>
+        <div class="header-center">
+            <p class="form-title">SALES TEAM FORM</p>
+            <h1 class="main-title">STATEMENT OF A CUSTOMER</h1>
+        </div>
+        <div class="header-right">
+            <p class="form-number">FORM19</p>
+            <p class="form-version">Version 4.01.08/05/19</p>
+        </div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div class="info-section">
+        <div class="info-row">
+            <div class="info-label">Subject:</div>
+            <div class="info-value"><span class="placeholder">[subject]</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Place:</div>
+            <div class="info-value"><span class="placeholder">[place]</span></div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Date:</div>
+            <div class="info-value">12 June 2025</div>
+        </div>
+    </div>
+    
+    <div class="name-row">
+        <span class="name-label">Name:</span>
+        <span class="name-value"><span class="placeholder">[customer_name]</span></span>
+    </div>
+    
+    <div class="states-section">
+        <div class="states-title">STATES:</div>
+        <ol class="statement-list">
+            <li>I am 36 years of age.</li>
+            <li>Testing next line.</li>
+            <li>Testing next line</li>
+        </ol>
+    </div>
+    
+    <div class="signature-section">
+        <div class="witness-column">
+            <div class="signature-line"></div>
+            <div class="signature-label">Witness:</div>
+            <div><span class="placeholder">[staff name]</span></div>
+            <div>Manager</div>
+            <div>12 June 2025</div>
+        </div>
+        <div class="signature-column">
+            <div class="signature-line"></div>
+            <div class="signature-label">Signature:</div>
+            <div><span class="placeholder">[customer name]</span></div>
+            <div>12 June 2025</div>
+        </div>
+    </div>
+    
+    <div class="page-number">Page 1 of 1</div>
+</body>
+</html>
