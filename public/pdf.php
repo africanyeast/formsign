@@ -7,17 +7,21 @@ function sanitizeInput($data) {
     return trim(htmlspecialchars($data, ENT_QUOTES, 'UTF-8'));
 }
 
-// Format date to "12 June 2025" format
-function formatDate($date) {
+// Format date to "Friday, 13 June 2025" format
+function formatDate($date, $includeDay = false) {
     if (empty($date)) {
-        return date('d F Y'); // Current date if empty
+        $timestamp = time();
+    } else if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) { // YYYY-MM-DD format
+        $timestamp = strtotime($date);
+    } else {
+        return $date; // Return as is if not in expected format
     }
     
-    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) { // YYYY-MM-DD format
-        return date('d F Y', strtotime($date));
+    if ($includeDay) {
+        return date('l, d F Y', $timestamp); // Friday, 13 June 2025
+    } else {
+        return date('d/m/Y', $timestamp); // 13/06/2025 format
     }
-    
-    return $date; // Return as is if not in expected format
 }
 
 function decodeSignature($base64Signature, $fileName) {
@@ -36,23 +40,20 @@ function decodeSignature($base64Signature, $fileName) {
 }
 
 // --- Data Validation and Retrieval ---
-$userType = isset($_POST['userType']) ? sanitizeInput($_POST['userType']) : null;
+$userType = isset($_POST['userType']) ? sanitizeInput($_POST['userType']) : '';
 $fullName = isset($_POST['fullName']) ? sanitizeInput($_POST['fullName']) : '';
 $subject = isset($_POST['subject']) ? sanitizeInput($_POST['subject']) : '';
 $place = isset($_POST['place']) ? sanitizeInput($_POST['place']) : '';
 $age = isset($_POST['age']) ? sanitizeInput($_POST['age']) : '';
-$reportNotes = isset($_POST['reportNotes']) ? sanitizeInput($_POST['reportNotes']) : '';
-$dob = isset($_POST['dob']) ? sanitizeInput($_POST['dob']) : ''; // Get DOB for age calculation if needed for PDF
-$reportType = isset($_POST['reportType']) ? sanitizeInput($_POST['reportType']) : ''; // Get report type
+$reportNotes = isset($_POST['reportNotes']) ? $_POST['reportNotes'] : '';
 
-if (!$userType || !$fullName || !$reportNotes || !$subject || !$place) {
-    die("Missing required information (User Type, Full Name, Subject, Place, or Report Notes).");
-}
+$dob = isset($_POST['dob']) ? sanitizeInput($_POST['dob']) : ''; 
+$reportType = isset($_POST['reportType']) ? sanitizeInput($_POST['reportType']) : ''; 
 
 // --- Configuration ---
-$logoPath = 'images/logo.png'; // Path to logo
-$version = '4.5 01.06.2025'; // Version information
-$currentDate = formatDate(date('Y-m-d'));
+$logoPath = 'images/logo.png'; // Shell logo
+$version = '4.51 (05/2025)';
+$currentDate = formatDate(date('Y-m-d'), true);
 $signingDate = formatDate(date('Y-m-d'));
 
 // Process signatures based on user type
@@ -72,14 +73,12 @@ if ($userType === 'staff') {
     $staffSignatureB64 = isset($_POST['staffSignature']) ? $_POST['staffSignature'] : null;
     $witnessSignatureB64 = isset($_POST['witnessSignature']) ? $_POST['witnessSignature'] : null;
 
-    if (!$staffSignatureB64) {
-        die("Missing Staff Signature.");
+    if ($staffSignatureB64) {
+        $staffSigFile = decodeSignature($staffSignatureB64, 'staff_signature.png');
+        if ($staffSigFile) $signatureFilesToUnlink[] = $staffSigFile;
     }
 
-    $staffSigFile = decodeSignature($staffSignatureB64, 'staff_signature.png');
-    if ($staffSigFile) $signatureFilesToUnlink[] = $staffSigFile;
-
-    if (!empty($witnessSignatureB64) && !empty($witnessName)) {
+    if (!empty($witnessSignatureB64)) {
         $witnessSigFile = decodeSignature($witnessSignatureB64, 'witness_signature.png');
         if ($witnessSigFile) $signatureFilesToUnlink[] = $witnessSigFile;
     }
@@ -89,13 +88,12 @@ if ($userType === 'staff') {
     $customerWitnessPosition = isset($_POST['customerWitnessPosition']) ? sanitizeInput($_POST['customerWitnessPosition']) : '';
     $customerWitnessSignatureB64 = isset($_POST['customerWitnessSignature']) ? $_POST['customerWitnessSignature'] : null;
 
-    if (!$customerSignatureB64) {
-        die("Missing Customer Signature.");
+    if ($customerSignatureB64) {
+        $customerSigFile = decodeSignature($customerSignatureB64, 'customer_signature.png');
+        if ($customerSigFile) $signatureFilesToUnlink[] = $customerSigFile;
     }
-    $customerSigFile = decodeSignature($customerSignatureB64, 'customer_signature.png');
-    if ($customerSigFile) $signatureFilesToUnlink[] = $customerSigFile;
 
-    if (!empty($customerWitnessSignatureB64) && !empty($customerWitnessName)) {
+    if (!empty($customerWitnessSignatureB64)) {
         $customerWitnessSigFile = decodeSignature($customerWitnessSignatureB64, 'customer_witness_signature.png');
         if ($customerWitnessSigFile) $signatureFilesToUnlink[] = $customerWitnessSigFile;
     }
@@ -108,305 +106,336 @@ $lineNumber = 1;
 
 foreach ($reportLines as $line) {
     $trimmedLine = trim($line);
-    if (!empty($trimmedLine) || $userType === 'staff') { // Always process lines for staff reports
-        $formattedReportLines[] = "<div class='report-line'><span class='line-number'>{$lineNumber}.</span> {$trimmedLine}</div>";
+    if (!empty($trimmedLine)) {
+        $formattedReportLines[] = ["number" => $lineNumber, "text" => $trimmedLine];
         $lineNumber++;
     }
 }
 
-// Create HTML content for the PDF
-$statementTitle = ($userType === 'customer') ? 'STATEMENT OF A CUSTOMER' : 'STATEMENT OF A STAFF';
-
-// Define CSS styles for the PDF
+// Define CSS styles for the PDF - mPDF COMPATIBLE VERSION
 $styles = <<<EOD
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        font-size: 11pt;
-        line-height: 1.4;
-        margin: 0;
-        padding: 0;
-    }
-    .header {
-        position: relative;
-        height: 80px;
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    .logo {
-        position: absolute;
-        top: 15px;
-        left: 20px;
-        height: 30px;
-    }
-    .form-title {
-        position: absolute;
-        top: 15px;
-        left: 0;
-        width: 100%;
-        text-align: center;
-        font-weight: bold;
-        font-size: 11pt;
-    }
-    .form-info {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        text-align: right;
-        font-size: 11pt;
-    }
-    .form-version {
-        font-size: 9pt;
-    }
-    .statement-title {
-        text-align: center;
-        font-weight: bold;
-        font-size: 13pt;
-        margin: 20px 0 10px 0;
-    }
-    .divider {
-        border-bottom: 3px solid #000;
-        margin: 5px 0 20px 0;
-    }
-    .info-box {
-        border: 1px solid #000;
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    .info-row {
-        margin-bottom: 5px;
-    }
-    .info-label {
-        font-weight: bold;
-        display: inline-block;
-        width: 80px;
-    }
-    .states-section {
-        margin: 20px 0;
-    }
-    .states-title {
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-    .report-line {
-        margin-bottom: 5px;
-    }
-    .line-number {
-        display: inline-block;
-        width: 20px;
-    }
-    .signatures {
-        position: fixed;
-        bottom: 70px;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-    }
-    .signature-column {
-        width: 50%;
-    }
-    .signature-title {
-        font-weight: bold;
-        font-size: 10pt;
-        margin-bottom: 5px;
-    }
-    .signature-image {
-        height: 50px;
-        margin-bottom: 5px;
-    }
-    .signature-info {
-        font-size: 10pt;
-        line-height: 1.3;
-    }
-    .footer {
-        position: fixed;
-        bottom: 10px;
-        width: 100%;
-        text-align: right;
-        font-style: italic;
-        font-size: 9pt;
-    }
-</style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        /*
+        .document {
+            background-color: white;
+            margin: 0 auto;
+            padding: 20px;
+        } */
+        
+        /* Header Table */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .header-table td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .logo-cell {
+            width: 75px;
+            padding-right: 15px;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            display: block;
+        }
+        
+        .company-name {
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .form-info {
+            text-align: right;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .document-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+            letter-spacing: 1px;
+        }
+        
+        .separator {
+            border-top: 3px solid #000;
+            margin: 15px 0;
+            height: 0;
+        }
+        
+        /* Info Section Table */
+        .info-table {
+            width: 100%;
+            border: 2px solid #666;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        .info-table tr:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            padding: 5px 10px;
+            font-weight: bold;
+            width: 80px;
+            vertical-align: middle;
+        }
+        
+        .info-value {
+            padding: 5px 10px;
+            vertical-align: middle;
+        }
+        
+        /* Name Section Table */
+        .name-table {
+            width: 100%;
+            border: 2px solid #666;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .name-label {
+            padding: 8px 10px;
+            font-weight: bold;
+            width: 80px;
+            vertical-align: middle;
+        }
+        
+        .name-value {
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+        
+        .states-section {
+            margin-bottom: 30px;
+        }
+        
+        .states-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .statement-item {
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        
+        .statement-number {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .lorem-text {
+            text-align: justify;
+            line-height: 1.3;
+        }
+        
+        /* Signature Section Table */
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 60px;
+            margin-bottom: 30px;
+        }
+        
+        .signature-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 0 10px;
+        }
+        
+        .signature-table td:first-child {
+            padding-left: 0;
+        }
+        
+        .signature-table td:last-child {
+            padding-right: 0;
+        }
+        
+        .signature-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .signature-details {
+            line-height: 1.3;
+        }
+        
+        .page-number {
+            text-align: right;
+            font-size: 10px;
+            color: #666;
+            margin-top: 20px;
+        }
+    </style>
 EOD;
 
-// Create HTML content
+// Create HTML content - mPDF COMPATIBLE STRUCTURE
 $html = <<<EOD
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Report</title>
+    <title>Statement of Customer</title>
     {$styles}
 </head>
 <body>
-    <div class="header">
-        <img src="{$logoPath}" class="logo" alt="Logo">
-        <div class="form-title">SALES TEAM FORM</div>
-        <div class="form-info">
-            <div>FORM19</div>
-            <div class="form-version">Version {$version}</div>
-        </div>
-    </div>
-    
-    <div class="statement-title">{$statementTitle}</div>
-    <div class="divider"></div>
-    
-    <div class="info-box">
-        <div class="info-row">
-            <span class="info-label">Subject:</span> {$subject}
-        </div>
-        <div class="info-row">
-            <span class="info-label">Place:</span> {$place}
-        </div>
-        <div class="info-row">
-            <span class="info-label">Date:</span> {$currentDate}
-        </div>
-    </div>
-    
-    <div class="info-box">
-        <div class="info-row">
-            <span class="info-label">Name:</span> {$fullName}
-        </div>
+    <div class="document">
+        <!-- Header Section - Fixed Layout -->
+        <table class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    <img src="{$logoPath}" alt="Company Logo" class="logo">
+                </td>
+                <td class="company-cell">
+                    <div class="company-name">COMPANY NAME GOES HERE</div>
+                </td>
+                <td class="form-cell">
+                    <div class="form-info">
+                        FORM19<br>
+                        Version {$version}
+                    </div>
+                </td>
+            </tr>
+        </table>
+        
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Document Title -->
+            <div class="document-title">STATEMENT OF A CUSTOMER</div>
+            
+            <!-- Separator Line -->
+            <div class="separator"></div>
+            
+            <!-- Info Section -->
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Subject:</td>
+                    <td class="info-value">{$subject}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Place:</td>
+                    <td class="info-value">{$place}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Date:</td>
+                    <td class="info-value">{$currentDate}</td>
+                </tr>
+            </table>
+            
+            <!-- Name Section -->
+            <table class="name-table">
+                <tr>
+                    <td class="name-label">Name:</td>
+                    <td class="name-value">{$fullName}</td>
+                </tr>
+            </table>
+            
+            <!-- States Section -->
+            <div class="states-section">
+                <div class="states-title">STATES:</div>
 EOD;
 
-// Add age or DOB based on user type
-if ($userType === 'customer' && !empty($age)) {
-    $html .= <<<EOD
-        <div class="info-row">
-            <span class="info-label">Age:</span> {$age}
-        </div>
-EOD;
-} elseif ($userType === 'customer' && !empty($dob)) {
-    $formattedDob = formatDate($dob);
-    $html .= <<<EOD
-        <div class="info-row">
-            <span class="info-label">DOB:</span> {$formattedDob}
-        </div>
-EOD;
-} elseif ($userType === 'staff' && !empty($staffType)) {
-    $html .= <<<EOD
-        <div class="info-row">
-            <span class="info-label">Position:</span> {$staffType}
-        </div>
-EOD;
-}
-
-// Add report type for customer
-if ($userType === 'customer' && !empty($reportType)) {
-    $html .= <<<EOD
-        <div class="info-row">
-            <span class="info-label">Type:</span> {$reportType}
-        </div>
-EOD;
-}
-
-$html .= <<<EOD
-    </div>
-    
-    <div class="states-section">
-        <div class="states-title">STATES:</div>
-        <div class="report-content">
-EOD;
-
-// Add report content
+// Add dynamic report content
 foreach ($formattedReportLines as $line) {
-    $html .= $line;
-}
-
-$html .= <<<EOD
-        </div>
-    </div>
-    
-    <div class="signatures">
-EOD;
-
-// Add signatures based on user type
-if ($userType === 'staff') {
     $html .= <<<EOD
-        <div class="signature-column">
-            <div class="signature-title">STAFF SIGNATURE:</div>
-EOD;
-    
-    if ($staffSigFile) {
-        $html .= <<<EOD
-            <img src="{$staffSigFile}" class="signature-image" alt="Staff Signature">
-EOD;
-    }
-    
-    $html .= <<<EOD
-            <div class="signature-info">
-                <div>{$fullName}</div>
-                <div>{$staffType}</div>
-                <div>Date: {$signingDate}</div>
-            </div>
-        </div>
-EOD;
-    
-    if ($witnessSigFile && !empty($witnessName)) {
-        $html .= <<<EOD
-        <div class="signature-column">
-            <div class="signature-title">WITNESS SIGNATURE:</div>
-            <img src="{$witnessSigFile}" class="signature-image" alt="Witness Signature">
-            <div class="signature-info">
-                <div>{$witnessName}</div>
-                <div>Date: {$signingDate}</div>
-            </div>
-        </div>
-EOD;
-    } else {
-        $html .= '<div class="signature-column"></div>';
-    }
-} elseif ($userType === 'customer') {
-    // For customer, put witness on left and signature on right
-    if ($customerWitnessSigFile && !empty($customerWitnessName)) {
-        $html .= <<<EOD
-        <div class="signature-column">
-            <div class="signature-title">WITNESS:</div>
-            <img src="{$customerWitnessSigFile}" class="signature-image" alt="Customer Witness Signature">
-            <div class="signature-info">
-                <div>{$customerWitnessName}</div>
-                <div>{$customerWitnessPosition}</div>
-                <div>Date: {$signingDate}</div>
-            </div>
-        </div>
-EOD;
-    } else {
-        $html .= '<div class="signature-column"></div>';
-    }
-    
-    $html .= <<<EOD
-        <div class="signature-column">
-            <div class="signature-title">SIGNATURE:</div>
-EOD;
-    
-    if ($customerSigFile) {
-        $html .= <<<EOD
-            <img src="{$customerSigFile}" class="signature-image" alt="Customer Signature">
-EOD;
-    }
-    
-    $html .= <<<EOD
-            <div class="signature-info">
-                <div>{$fullName}</div>
-                <div>Date: {$signingDate}</div>
-            </div>
-        </div>
+                <div class="statement-item">
+                    <span class="statement-number">{$line['number']}.</span>
+                    <span class="statement-text">{$line['text']}</span>
+                </div>
 EOD;
 }
 
 $html .= <<<EOD
-    </div>
-    
-    <div class="footer">
-        Page {PAGENO} of {nbpg}
+            </div>
+        </div>
+        
+        <!-- Signature Section - Fixed to Bottom -->
+        <div class="signature-section">
+            <table class="signature-table">
+                <tr>
+                    <td>
+                        <div class="signature-label">Witness:</div>
+                        <div class="signature-line">
+EOD;
+
+// Add witness signature image if available
+if ($userType === 'customer' && $customerWitnessSigFile && file_exists($customerWitnessSigFile)) {
+    $html .= '<img src="' . $customerWitnessSigFile . '" class="signature-image" alt="Witness Signature">';
+} elseif ($userType === 'staff' && $witnessSigFile && file_exists($witnessSigFile)) {
+    $html .= '<img src="' . $witnessSigFile . '" class="signature-image" alt="Witness Signature">';
+}
+
+$witnessDisplayName = ($userType === 'customer') ? $customerWitnessName : $witnessName;
+$witnessDisplayPosition = ($userType === 'customer') ? $customerWitnessPosition : $staffType;
+
+$html .= <<<EOD
+                        </div>
+                        <div class="signature-details">
+                            {$witnessDisplayName}<br>
+                            {$witnessDisplayPosition}<br>
+                            {$signingDate}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="signature-label">Signature:</div>
+                        <div class="signature-line">
+EOD;
+
+// Add customer/staff signature image if available
+if ($userType === 'customer' && $customerSigFile && file_exists($customerSigFile)) {
+    $html .= '<img src="' . $customerSigFile . '" class="signature-image" alt="Customer Signature">';
+} elseif ($userType === 'staff' && $staffSigFile && file_exists($staffSigFile)) {
+    $html .= '<img src="' . $staffSigFile . '" class="signature-image" alt="Staff Signature">';
+}
+
+$html .= <<<EOD
+                        </div>
+                        <div class="signature-details">
+                            {$fullName}<br>
+                            {$signingDate}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Page Number - Fixed to Bottom -->
+        <div class="page-number">Page {PAGENO} of {nbpg}</div>
     </div>
 </body>
 </html>
 EOD;
 
-// Initialize mPDF
+// Initialize mPDF with optimal settings for template matching
 try {
-    // Configure mPDF
+    // Configure mPDF for exact template rendering
     $mpdf = new \Mpdf\Mpdf([
         'mode' => 'utf-8',
         'format' => 'A4',
@@ -416,15 +445,22 @@ try {
         'margin_bottom' => 15,
         'margin_header' => 0,
         'margin_footer' => 0,
+        'default_font_size' => 12,
+        'default_font' => 'Arial',
+        'orientation' => 'P',
+        // Enable better CSS support
+        'tempDir' => sys_get_temp_dir(),
     ]);
     
-    // Enable page numbers
-    //$mpdf->SetFooter('{PAGENO} of {nbpg}');
-    
     // Set document metadata
-    $mpdf->SetTitle('Statement - ' . $fullName);
+    $mpdf->SetTitle('Statement of Customer - ' . $fullName);
     $mpdf->SetAuthor('FORM19 System');
     $mpdf->SetCreator('FORM19 System');
+    $mpdf->SetSubject('Customer Statement');
+    
+    // Improve rendering quality
+    $mpdf->img_dpi = 300;
+    $mpdf->pdf_version = '1.6';
     
     // Write HTML to PDF
     $mpdf->WriteHTML($html);
@@ -432,12 +468,24 @@ try {
     // Output PDF
     $filename = 'Statement_' . str_replace(' ', '_', $fullName) . '_' . date('Ymd_His') . '.pdf';
     $mpdf->Output($filename, 'D'); // 'D' forces download
+    
     // Clean up temporary signature files
     foreach ($signatureFilesToUnlink as $file) {
         if (file_exists($file)) {
             unlink($file);
         }
     }
+    
 } catch (\Mpdf\MpdfException $e) {
+    // If mPDF fails, log the error
+    error_log('mPDF Error: ' . $e->getMessage());
+    // Clean up temporary signature files even on error
+    foreach ($signatureFilesToUnlink as $file) {
+        if (file_exists($file)) {
+            unlink($file);
+        }
+    }
+    // For now, output the error
     die('Error creating PDF: ' . $e->getMessage());
 }
+?>

@@ -15,7 +15,7 @@
           <div class="card-body p-4 p-md-5">
             <div class="text-center mb-4">
               <!-- Placeholder for Logo -->
-              <img src="/public/images/logo.png" alt="Company Logo" class="logo img-fluid" id="companyLogo" /> 
+              <img src="images/logo.png" alt="Company Logo" class="logo img-fluid" id="companyLogo" /> 
               <h5 class="card-title mb-3">File a Report</h5>
             </div>
 
@@ -29,7 +29,7 @@
               </div>
             </div>
 
-            <form method="POST" action="generate.php" onsubmit="return prepareFormData();" id="reportForm" style="display: none;">
+            <form method="POST" id="reportForm" style="display: none;">
               <div class="mb-3">
                 <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name" required>
               </div>
@@ -141,6 +141,10 @@
   </div>
 </div>
 
+  <!-- Add these script tags before closing </body> tag -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="js/script.js"></script>
+  <script src="js/generate.js"></script>
 </body>
 </html>

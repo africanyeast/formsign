@@ -1,10 +1,10 @@
 const staffSigCanvasEl = document.getElementById("staffSigCanvas");
 const witnessSigCanvasEl = document.getElementById("witnessSigCanvas");
 const customerSigCanvasEl = document.getElementById("customerSigCanvas");
-const customerWitnessSigCanvasEl = document.getElementById("customerWitnessSigCanvas"); // New canvas
+const customerWitnessSigCanvasEl = document.getElementById("customerWitnessSigCanvas");
 const userTypeRadios = document.querySelectorAll('input[name="userType"]');
 const reportForm = document.getElementById('reportForm');
-const reportTypeSelect = document.getElementById('reportType'); // New select
+const reportTypeSelect = document.getElementById('reportType');
 const fullNameInput = document.getElementById('fullName');
 const dobInput = document.getElementById('dob');
 const reportNotesTextarea = document.getElementById('reportNotes');
@@ -12,10 +12,10 @@ const reportNotesTextarea = document.getElementById('reportNotes');
 // Create a helper div to get computed styles for the placeholder text
 const placeholderStyleHelper = document.createElement('div');
 placeholderStyleHelper.className = 'signature-placeholder-text';
-placeholderStyleHelper.style.display = 'none'; // Keep it hidden
+placeholderStyleHelper.style.display = 'none';
 document.body.appendChild(placeholderStyleHelper);
 
-let staffCtx, witnessCtx, customerCtx, customerWitnessCtx; // Added customerWitnessCtx
+let staffCtx, witnessCtx, customerCtx, customerWitnessCtx;
 
 function drawSignaturePlaceholder(canvas) {
   if (canvas && canvas.offsetParent !== null) {
@@ -458,6 +458,27 @@ document.querySelectorAll('.clear-sig-btn').forEach(button => {
     });
 });
 
+// Updated form submission handler
+function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    // Validate and prepare form data
+    if (!prepareFormData()) {
+        return false;
+    }
+    
+    // Generate PDF using the modular function
+    if (typeof generatePDF === 'function') {
+        generatePDF();
+    } else {
+        console.error('PDF generation module not loaded');
+        alert('PDF generation is not available. Please refresh the page.');
+    }
+    
+    return false; // Prevent default form submission
+}
+
+// Update DOMContentLoaded event
 document.addEventListener('DOMContentLoaded', function() {
     // Ensure the helper is in the DOM before trying to get styles
     if (!document.body.contains(placeholderStyleHelper)) {
@@ -467,7 +488,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (staffSigCanvasEl) staffCtx = initializeCanvas(staffSigCanvasEl);
     if (witnessSigCanvasEl) witnessCtx = initializeCanvas(witnessSigCanvasEl);
     if (customerSigCanvasEl) customerCtx = initializeCanvas(customerSigCanvasEl);
-    if (customerWitnessSigCanvasEl) customerWitnessCtx = initializeCanvas(customerWitnessSigCanvasEl); // New Canvas
+    if (customerWitnessSigCanvasEl) customerWitnessCtx = initializeCanvas(customerWitnessSigCanvasEl);
     
-    toggleFields(); 
+    toggleFields();
+    
+    // Add form submit event listener
+    const form = document.getElementById('reportForm');
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+    }
 });
