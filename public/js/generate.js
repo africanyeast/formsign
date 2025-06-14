@@ -1,4 +1,4 @@
-// PDF Generation Module using pdfmake
+// PDF Generation Module using pdfmake - FIXED VERSION
 // This file handles all PDF generation functionality
 
 function generatePDF() {
@@ -51,6 +51,36 @@ function getSignatureDataURL(canvasId) {
     return currentDataUrl === placeholderDataUrl ? null : currentDataUrl;
 }
 
+// FIXED: Better image loading with proper CORS handling and error handling
+function loadImageWithCORS(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // Enable CORS
+        
+        img.onload = function() {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const dataURL = canvas.toDataURL();
+                resolve(dataURL);
+            } catch (error) {
+                console.warn('Failed to convert image to data URL, using fallback:', error);
+                resolve(null); // Return null instead of rejecting
+            }
+        };
+        
+        img.onerror = function(error) {
+            console.warn('Failed to load image, using fallback:', src, error);
+            resolve(null); // Return null instead of rejecting to allow PDF generation without logo
+        };
+        
+        img.src = src;
+    });
+}
+
 function createPDFDocument(formData, signatures) {
     // Format dates
     const currentDate = new Date().toLocaleDateString('en-GB', {
@@ -85,37 +115,38 @@ function createPDFDocument(formData, signatures) {
         witnessPosition = formData.customerWitnessPosition;
     }
     
-    // Load the company logo
-    const logoUrl = '/public/images/logo.webp';
+    // FIXED: Try multiple logo paths and handle failures gracefully
+    const logoPaths = [
+        '/images/logo.webp',  // Vercel public folder path
+        './images/logo.webp', // Relative path
+        '/public/images/logo.webp', // Original path as fallback
+        'images/logo.webp'    // Direct path
+    ];
     
-    // Create a promise to load the logo image
-    const loadLogoImage = new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL());
-        };
-        img.onerror = reject;
-        img.src = logoUrl;
-    });
+    // FIXED: Improved logo loading with multiple fallbacks
+    async function tryLoadLogo() {
+        for (const path of logoPaths) {
+            try {
+                const logoDataUrl = await loadImageWithCORS(path);
+                if (logoDataUrl) {
+                    return logoDataUrl;
+                }
+            } catch (error) {
+                console.warn(`Failed to load logo from ${path}:`, error);
+                continue;
+            }
+        }
+        console.warn('All logo paths failed, proceeding without logo');
+        return null;
+    }
     
-    // Create promises for signature images
-    const loadWitnessSignature = witnessSignature ? Promise.resolve(witnessSignature) : Promise.resolve(null);
-    const loadMainSignature = mainSignature ? Promise.resolve(mainSignature) : Promise.resolve(null);
-    
-    // Wait for all images to load
-    Promise.all([loadLogoImage, loadWitnessSignature, loadMainSignature])
-        .then(([logoDataUrl, witnessSignatureDataUrl, mainSignatureDataUrl]) => {
+    // FIXED: Better promise handling
+    tryLoadLogo()
+        .then(logoDataUrl => {
             // Create document definition for pdfmake
             const docDefinition = {
                 pageSize: 'A4',
-                pageMargins: [40, 40, 40, 40], // [left, top, right, bottom]
-                // In the docDefinition object, replace:
-                
+                pageMargins: [40, 40, 40, 40],
                 defaultStyle: {
                     fontSize: 10,
                     color: '#000000'
@@ -129,17 +160,14 @@ function createPDFDocument(formData, signatures) {
                         bold: false
                     };
                 },
-                // In the docDefinition object, modify the content array to remove the existing signature section
-                // and add a new absolutePosition element at the end:
-                
                 content: [
-                    // Header Section
+                    // Header Section - FIXED: Handle missing logo gracefully
                     {
                         table: {
-                            widths: [60, '*'],
+                            widths: logoDataUrl ? [60, '*'] : ['*'], // Adjust widths based on logo availability
                             body: [
-                                [
-                                    // Logo Cell
+                                logoDataUrl ? [
+                                    // Logo Cell (only if logo loaded successfully)
                                     {
                                         image: logoDataUrl,
                                         width: 60,
@@ -149,20 +177,17 @@ function createPDFDocument(formData, signatures) {
                                     // Header Content Area
                                     {
                                         stack: [
-                                            // Grey Header Bar
                                             {
                                                 table: {
                                                     widths: ['*', 'auto'],
                                                     body: [
                                                         [
-                                                            // Company Name
                                                             {
                                                                 text: 'COMPANY NAME GOES HERE',
                                                                 fontSize: 11,
                                                                 bold: true,
                                                                 color: '#666666'
                                                             },
-                                                            // Form Info
                                                             {
                                                                 text: 'FORM19',
                                                                 fontSize: 10,
@@ -174,9 +199,7 @@ function createPDFDocument(formData, signatures) {
                                                     ]
                                                 },
                                                 layout: {
-                                                    fillColor: function() {
-                                                        return '#e6e6e6';
-                                                    },
+                                                    fillColor: function() { return '#e6e6e6'; },
                                                     paddingLeft: function() { return 10; },
                                                     paddingRight: function() { return 10; },
                                                     paddingTop: function() { return 5; },
@@ -185,7 +208,50 @@ function createPDFDocument(formData, signatures) {
                                                     vLineWidth: function() { return 0; }
                                                 }
                                             },
-                                            // Version Info
+                                            {
+                                                text: 'Version 4.51 (05/2025)',
+                                                fontSize: 9,
+                                                color: '#666666',
+                                                alignment: 'right',
+                                                margin: [0, 2, 0, 0]
+                                            }
+                                        ]
+                                    }
+                                ] : [
+                                    // Header without logo
+                                    {
+                                        stack: [
+                                            {
+                                                table: {
+                                                    widths: ['*', 'auto'],
+                                                    body: [
+                                                        [
+                                                            {
+                                                                text: 'COMPANY NAME GOES HERE',
+                                                                fontSize: 11,
+                                                                bold: true,
+                                                                color: '#666666'
+                                                            },
+                                                            {
+                                                                text: 'FORM19',
+                                                                fontSize: 10,
+                                                                bold: true,
+                                                                color: '#666666',
+                                                                alignment: 'right'
+                                                            }
+                                                        ]
+                                                    ]
+                                                },
+                                                layout: {
+                                                    fillColor: function() { return '#e6e6e6'; },
+                                                    paddingLeft: function() { return 10; },
+                                                    paddingRight: function() { return 10; },
+                                                    paddingTop: function() { return 5; },
+                                                    paddingBottom: function() { return 5; },
+                                                    hLineWidth: function() { return 0; },
+                                                    vLineWidth: function() { return 0; }
+                                                }
+                                            },
                                             {
                                                 text: 'Version 4.51 (05/2025)',
                                                 fontSize: 9,
@@ -202,7 +268,7 @@ function createPDFDocument(formData, signatures) {
                         margin: [0, 0, 0, 0]
                     },
                     
-                    // Document Title - Make it dynamic based on user type
+                    // Document Title
                     {
                         text: formData.userType === 'staff' ? 'STATEMENT OF A STAFF' : 'STATEMENT OF A CUSTOMER',
                         fontSize: 12,
@@ -224,10 +290,7 @@ function createPDFDocument(formData, signatures) {
                         margin: [0, 0, 0, 25]
                     },
                     
-                    // In the docDefinition object, update the Info Section and Name Section tables:
-                    
-                    // Info Section - updated to have only outer borders with no internal horizontal lines
-                    // and reduced right margin between label and value
+                    // Info Section
                     {
                         table: {
                             widths: [80, '*'],
@@ -250,13 +313,12 @@ function createPDFDocument(formData, signatures) {
                             hLineWidth: function(i, node) { return 2; },
                             vLineWidth: function(i, node) { return 2; },
                             hLineColor: function(i, node) { return '#666666'; },
-                            vLineColor: function(i, node) { return '#666666'; },
-                            // Custom border layout is handled by the cell border property
+                            vLineColor: function(i, node) { return '#666666'; }
                         },
                         margin: [0, 0, 0, 15]
                     },
                     
-                    // Name Section - reduced right margin between label and value
+                    // Name Section
                     {
                         table: {
                             widths: [80, '*'],
@@ -271,8 +333,7 @@ function createPDFDocument(formData, signatures) {
                             hLineWidth: function(i, node) { return 2; },
                             vLineWidth: function(i, node) { return 2; },
                             hLineColor: function(i, node) { return '#666666'; },
-                            vLineColor: function(i, node) { return '#666666'; },
-                            // Custom border layout is handled by the cell border property
+                            vLineColor: function(i, node) { return '#666666'; }
                         },
                         margin: [0, 0, 0, 20]
                     },
@@ -300,21 +361,19 @@ function createPDFDocument(formData, signatures) {
                                 margin: [0, 0, 0, 12]
                             }
                         ]
-                    })),
+                    }))
                 ],
                 
-                // Add this after the content array to position the signature section at the bottom
-                // In the background function, update the signature section implementation:
+                // Signature section in background
                 background: function(currentPage, pageSize) {
                     return [
-                        // Only add the signature section to the first/last page
                         {
                             absolutePosition: {x: 40, y: pageSize.height - 140},
-                            width: pageSize.width - 80, // Set width to page width minus margins
+                            width: pageSize.width - 80,
                             columns: [
                                 // Witness Signature
                                 {
-                                    width: '50%', // Use percentage instead of '*' to control width
+                                    width: '50%',
                                     stack: [
                                         {
                                             columns: [
@@ -326,16 +385,14 @@ function createPDFDocument(formData, signatures) {
                                                 },
                                                 {
                                                     width: '*',
-                                                    // Position the line at the bottom of the label
                                                     stack: [
-                                                        { text: '', margin: [0, 15, 0, 0] }, // Add space to align with bottom of label
+                                                        { text: '', margin: [0, 15, 0, 0] },
                                                         { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 150, y2: 0, lineWidth: 1 }] },
-                                                        // Then position the signature on top of the line with negative margin
-                                                        witnessSignatureDataUrl ? {
-                                                            image: witnessSignatureDataUrl,
-                                                            width: 200, // Reduced width to prevent overflow
+                                                        witnessSignature ? {
+                                                            image: witnessSignature,
+                                                            width: 200,
                                                             height: 50,
-                                                            margin: [0, -40, 0, 0] // Adjusted negative margin for larger image
+                                                            margin: [0, -40, 0, 0]
                                                         } : {}
                                                     ]
                                                 }
@@ -355,7 +412,7 @@ function createPDFDocument(formData, signatures) {
                                 },
                                 // Main Signature
                                 {
-                                    width: '50%', // Use percentage instead of '*' to control width
+                                    width: '50%',
                                     stack: [
                                         {
                                             columns: [
@@ -367,16 +424,14 @@ function createPDFDocument(formData, signatures) {
                                                 },
                                                 {
                                                     width: '*',
-                                                    // Position the line at the bottom of the label
                                                     stack: [
-                                                        { text: '', margin: [0, 15, 0, 0] }, // Add space to align with bottom of label
+                                                        { text: '', margin: [0, 15, 0, 0] },
                                                         { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 150, y2: 0, lineWidth: 1 }] },
-                                                        // Then position the signature on top of the line with negative margin
-                                                        mainSignatureDataUrl ? {
-                                                            image: mainSignatureDataUrl,
-                                                            width: 200, // Reduced width to prevent overflow
+                                                        mainSignature ? {
+                                                            image: mainSignature,
+                                                            width: 200,
                                                             height: 50,
-                                                            margin: [0, -40, 0, 0] // Adjusted negative margin for larger image
+                                                            margin: [0, -40, 0, 0]
                                                         } : {}
                                                     ]
                                                 }
@@ -398,28 +453,39 @@ function createPDFDocument(formData, signatures) {
                     ];
                 },
                 margin: [0, 60, 0, 0]
-        };
-        
-        // Generate filename
-        const filename = `Statement_${formData.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
-        
-        // Create the PDF
-        pdfMake.createPdf(docDefinition).getBlob((blob) => {
-            // Create a URL for the blob
-            const pdfUrl = URL.createObjectURL(blob);
+            };
             
-            // Open the PDF in a new tab
-            window.open(pdfUrl, '_blank');
+            // Generate filename
+            const filename = `Statement_${formData.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
             
-            // Also download the PDF for the user to keep
-            pdfMake.createPdf(docDefinition).download(filename);
-            
-            // Show success message
-            alert('PDF generated successfully!');
+            // FIXED: Better error handling for PDF creation
+            try {
+                // Create the PDF
+                pdfMake.createPdf(docDefinition).getBlob((blob) => {
+                    try {
+                        // Create a URL for the blob
+                        const pdfUrl = URL.createObjectURL(blob);
+                        
+                        // Open the PDF in a new tab
+                        window.open(pdfUrl, '_blank');
+                        
+                        // Also download the PDF for the user to keep
+                        pdfMake.createPdf(docDefinition).download(filename);
+                        
+                        // Show success message
+                        alert('PDF generated successfully!');
+                    } catch (blobError) {
+                        console.error('Error handling PDF blob:', blobError);
+                        alert('PDF was generated but there was an error opening it. Please try again.');
+                    }
+                });
+            } catch (pdfError) {
+                console.error('Error creating PDF:', pdfError);
+                alert('Error generating PDF. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error in PDF generation process:', error);
+            alert('Error generating PDF. Please try again.');
         });
-    })
-    .catch(error => {
-        console.error('Error generating PDF:', error);
-        alert('Error generating PDF. Please try again.');
-    });
 }
