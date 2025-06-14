@@ -43,7 +43,7 @@ h5{
   touch-action: none;
   background-color: #fff; 
   border-radius: 0.375rem;
-  cursor: crosshair;
+  cursor: default;
 }
 
 /* Class for styling signature placeholder text via JS */
