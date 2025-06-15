@@ -49,7 +49,7 @@
               </div>
 
               <div class="mb-3 dob-field" style="display: none;">
-                <input type="text" class="form-control" id="dob" name="dob" placeholder="Date of Birth (MM/DD/YYYY)">
+                <input type="text" class="form-control" id="dob" name="dob" placeholder="Date of Birth (DD/MM/YYYY)">
               </div>
 
               <div class="mb-3 customer-fields report-type-field" style="display: none;">
@@ -85,6 +85,17 @@
                 <div class="witness-section"> 
                   <div class="mb-3 witness-name-field">
                     <input type="text" class="form-control" id="witnessName" name="witnessName" placeholder="Witness Name" required>
+                  </div>
+                  
+                  <!-- Add witness position field for staff reports -->
+                  <div class="mb-3 witness-position-field">
+                    <select class="form-select" id="witnessPosition" name="witnessPosition" title="Witness Position">
+                      <option value="" selected>Witness Position</option>
+                      <option value="supervisor">Supervisor</option>
+                      <option value="manager">Manager</option>
+                      <option value="director">Director</option>
+                      <option value="sales">Sales</option>
+                    </select>
                   </div>
 
                   <div class="mb-3 witness-signature-field position-relative sigCanvas-container">
@@ -133,6 +144,7 @@
               <input type="hidden" name="customerSignature" id="customerSignature">
               <input type="hidden" name="customerWitnessSignature" id="customerWitnessSignature">
               <input type="hidden" name="userType" id="hiddenUserType">
+              <input type="hidden" name="witnessPosition" id="hiddenWitnessPosition">
 
               <button type="submit" class="btn btn-primary w-100">Generate PDF</button>
         </form>
