@@ -461,6 +461,7 @@ document.addEventListener('DOMContentLoaded', function() {
       enableSeconds: true,
       allowInput: true,
       disableMobile: true,
+      defaultDate: new Date(), // Set current date/time as default
       placeholder: "Select Real Time"
     });
   }
