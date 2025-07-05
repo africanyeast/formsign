@@ -459,11 +459,14 @@ document.addEventListener('DOMContentLoaded', function() {
       dateFormat: "d/m/Y H:i:S",
       time_24hr: true,
       enableSeconds: true,
-      allowInput: true,
+      allowInput: false, // Disable manual input
       disableMobile: true,
       defaultDate: new Date(), // Set current date/time as default
       placeholder: "Select Real Time"
     });
+    
+    // Add readonly attribute to prevent editing
+    dashcamRealTimeInput.setAttribute('readonly', 'readonly');
   }
   
   if (dashcamTimeInput) {
@@ -474,7 +477,16 @@ document.addEventListener('DOMContentLoaded', function() {
       enableSeconds: true,
       allowInput: true,
       disableMobile: true,
-      placeholder: "Select Dashcam Time"
+      placeholder: "Select Dashcam Time",
+      onChange: function(selectedDates, dateStr, instance) {
+        // Update real time input to current date/time when dashcam time is selected
+        if (dashcamRealTimeInput && dateStr) {
+          const realTimeFlatpickr = dashcamRealTimeInput._flatpickr;
+          if (realTimeFlatpickr) {
+            realTimeFlatpickr.setDate(new Date());
+          }
+        }
+      }
     });
   }
   
