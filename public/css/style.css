@@ -72,6 +72,12 @@ h5{
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
+
+.form-floating label{
+    font-size: 16px;
+    color: #6c757d;
+}
+
 .btn-primary{
   font-weight: 500;
 }

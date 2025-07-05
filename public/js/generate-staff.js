@@ -13,7 +13,8 @@ function generateStaffPDF() {
         staffType: ((document.getElementById('staffType')?.value || '').toLowerCase().replace(/^\w/, c => c.toUpperCase())),
         witnessName: document.getElementById('witnessName')?.value || '',
         witnessPosition: ((document.getElementById('witnessPosition')?.value || '').toLowerCase().replace(/^\w/, c => c.toUpperCase())),
-        staffOffice: document.getElementById('staffOffice')?.value || '', // Add office field
+        staffOffice: document.getElementById('staffOffice')?.value || '', // Staff office field
+        witnessOffice: document.getElementById('witnessOffice')?.value || '', // Add witness office field
     };
 
     // Get signatures
@@ -211,6 +212,10 @@ function createStaffPDFDocument(formData, signatures) {
                                                 
                                                 if (witnessPosition) {
                                                     textArray.push(witnessPosition + '\n');
+                                                }
+                                                
+                                                if (formData.witnessOffice) {
+                                                    textArray.push(formData.witnessOffice + '\n');
                                                 }
                                                 
                                                 textArray.push(signingDate);
@@ -477,7 +482,7 @@ function createStaffPDFDocument(formData, signatures) {
                 
                 // Save report data to CSV
                 const reportData = {
-                    date_time: getFormattedDateTime(),
+                    date_time: new Date().toISOString().replace('T', ' ').substring(0, 19),
                     report_type: 'staff',
                     full_name: formData.fullName,
                     subject: formData.subject,
@@ -487,8 +492,7 @@ function createStaffPDFDocument(formData, signatures) {
                     staff_office: formData.staffOffice,
                     witness_name: formData.witnessName,
                     witness_position: formData.witnessPosition,
-                    // Add customer-specific field to maintain consistent structure
-                    witness_office: '',
+                    witness_office: formData.witnessOffice, // Add witness office field
                     real_time: '',
                     dashcam_time: '',
                     time_difference: '',

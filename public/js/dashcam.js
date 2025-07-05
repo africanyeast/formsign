@@ -233,34 +233,109 @@ function calculateAge(dobString) {
 function calculateTimeDifference(realTime, dashcamTime) {
   if (!realTime || !dashcamTime) return '';
   
-  const realDate = new Date(realTime);
-  const dashcamDate = new Date(dashcamTime);
+  // Parse the date strings in d/m/Y H:i:S format
+  let realDate, dashcamDate;
   
-  if (isNaN(realDate.getTime()) || isNaN(dashcamDate.getTime())) {
+  try {
+    // Try to parse the dates - first attempt with direct constructor
+    realDate = new Date(realTime);
+    dashcamDate = new Date(dashcamTime);
+    
+    // Check if dates are valid
+    if (isNaN(realDate.getTime()) || isNaN(dashcamDate.getTime())) {
+      // If not valid, try manual parsing for d/m/Y H:i:S format
+      const parseCustomDate = (dateStr) => {
+        // Format: d/m/Y H:i:S
+        const parts = dateStr.split(' ');
+        if (parts.length !== 2) return null;
+        
+        const dateParts = parts[0].split('/');
+        const timeParts = parts[1].split(':');
+        
+        if (dateParts.length !== 3 || timeParts.length !== 3) return null;
+        
+        // Note: months are 0-indexed in JavaScript Date
+        return new Date(
+          parseInt(dateParts[2]), // year
+          parseInt(dateParts[1]) - 1, // month (0-indexed)
+          parseInt(dateParts[0]), // day
+          parseInt(timeParts[0]), // hours
+          parseInt(timeParts[1]), // minutes
+          parseInt(timeParts[2])  // seconds
+        );
+      };
+      
+      realDate = parseCustomDate(realTime);
+      dashcamDate = parseCustomDate(dashcamTime);
+      
+      if (!realDate || !dashcamDate) return '';
+    }
+  } catch (e) {
+    console.error('Error parsing dates:', e);
     return '';
   }
   
   // Calculate difference in milliseconds
-  const diffMs = realDate.getTime() - dashcamDate.getTime();
+  const diffMs = Math.abs(realDate.getTime() - dashcamDate.getTime());
   
-  // Convert to minutes for easier reading
-  const diffMinutes = Math.round(diffMs / 60000);
+  // Convert to hours, minutes, and seconds
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
   
-  if (diffMinutes === 0) {
+  // Format the time difference string
+  let diffString = '';
+  if (hours > 0) {
+    diffString += `${hours} hour${hours !== 1 ? 's' : ''} `;
+  }
+  if (minutes > 0 || hours > 0) {
+    diffString += `${minutes} minute${minutes !== 1 ? 's' : ''} `;
+  }
+  diffString += `${seconds} second${seconds !== 1 ? 's' : ''}`;
+  
+  if (diffMs === 0) {
     return "The dashcam time is accurate.";
-  } else if (diffMinutes > 0) {
-    return `Therefore the dashcam time is ${Math.abs(diffMinutes)} minute${Math.abs(diffMinutes) !== 1 ? 's' : ''} slow.`;
+  } else if (realDate > dashcamDate) {
+    return `Therefore the dashcam time is ${diffString} slow.`;
   } else {
-    return `Therefore the dashcam time is ${Math.abs(diffMinutes)} minute${Math.abs(diffMinutes) !== 1 ? 's' : ''} fast.`;
+    return `Therefore the dashcam time is ${diffString} fast.`;
   }
 }
 
 function formatDateTime(dateTimeStr) {
   if (!dateTimeStr) return '';
   
-  const date = new Date(dateTimeStr);
+  let date;
   
-  if (isNaN(date.getTime())) {
+  try {
+    // First try standard Date constructor
+    date = new Date(dateTimeStr);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      // If not valid, try manual parsing for d/m/Y H:i:S format
+      const parts = dateTimeStr.split(' ');
+      if (parts.length !== 2) return '';
+      
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      
+      if (dateParts.length !== 3 || timeParts.length !== 3) return '';
+      
+      // Note: months are 0-indexed in JavaScript Date
+      date = new Date(
+        parseInt(dateParts[2]), // year
+        parseInt(dateParts[1]) - 1, // month (0-indexed)
+        parseInt(dateParts[0]), // day
+        parseInt(timeParts[0]), // hours
+        parseInt(timeParts[1]), // minutes
+        parseInt(timeParts[2])  // seconds
+      );
+      
+      if (isNaN(date.getTime())) return '';
+    }
+  } catch (e) {
+    console.error('Error parsing date:', e);
     return '';
   }
   
@@ -381,18 +456,22 @@ document.addEventListener('DOMContentLoaded', function() {
   if (dashcamRealTimeInput) {
     flatpickr(dashcamRealTimeInput, {
       enableTime: true,
-      dateFormat: "Y-m-d H:i:S",
-    //   defaultDate: new Date(),
-      time_24hr: true
+      dateFormat: "d/m/Y H:i:S",
+      time_24hr: true,
+      enableSeconds: true,
+      allowInput: true,
+      placeholder: "Select Real Time"
     });
   }
   
   if (dashcamTimeInput) {
     flatpickr(dashcamTimeInput, {
       enableTime: true,
-      dateFormat: "Y-m-d H:i:S",
-    //   defaultDate: new Date(),
-      time_24hr: true
+      dateFormat: "d/m/Y H:i:S",
+      time_24hr: true,
+      enableSeconds: true,
+      allowInput: true,
+      placeholder: "Select Dashcam Time"
     });
   }
   

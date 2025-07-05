@@ -116,13 +116,17 @@
                   </select>
                 </div>                
 
+              <!-- Add Office field for witness -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="witnessOffice" name="witnessOffice" placeholder="Office Location">
+              </div>
 
-                <div class="mb-3 position-relative sigCanvas-container">
-                  <canvas id="witnessSigCanvas" class="sigCanvas"></canvas>
-                  <div class="mt-1 text-end">
-                    <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="witnessSigCanvas">Clear</button>
-                  </div>
+              <div class="mb-3 position-relative sigCanvas-container">
+                <canvas id="witnessSigCanvas" class="sigCanvas"></canvas>
+                <div class="mt-1 text-end">
+                  <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="witnessSigCanvas">Clear</button>
                 </div>
+              </div>
               </div>
 
               <input type="hidden" name="staffSignature" id="staffSignature">
@@ -232,21 +236,21 @@
                 <input type="text" class="form-control" id="dashcamDob" name="dob" placeholder="Date of Birth (DD/MM/YYYY)" required>
               </div>
 
-              <!-- Add Real Time field with date/time picker -->
-              <div class="mb-3">
-                <input type="text" class="form-control" id="dashcamRealTime" name="realTime" placeholder="Real Time" required>
+              <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="dashcamRealTime" name="realTime" placeholder="Select Real Time" required autocomplete="off">
+                  <label for="floatingInput">Real Time</label>
               </div>
 
-              <!-- Add Dashcam Time field with date/time picker -->
-              <div class="mb-3">
-                <input type="text" class="form-control" id="dashcamTime" name="dashcamTime" placeholder="Dashcam Time" required>
+              <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="dashcamTime" name="dashcamTime" placeholder="Select Dashcam Time" required autocomplete="off">
+                  <label for="floatingInput">Dashcam Time</label>
               </div>
 
               <div class="mb-3">
                 <select class="form-select" id="dashcamReportType" name="reportType" title="Report Type" required>
                   <option value="" selected>Report Type</option>
                   <option value="typeA">Type A</option>
-                  <option value="typeA">Type B</option>
+                  <option value="typeB">Type B</option>
                 </select>
               </div>
 
