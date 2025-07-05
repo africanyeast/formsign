@@ -460,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
       time_24hr: true,
       enableSeconds: true,
       allowInput: true,
+      disableMobile: true,
       placeholder: "Select Real Time"
     });
   }
@@ -471,6 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
       time_24hr: true,
       enableSeconds: true,
       allowInput: true,
+      disableMobile: true,
       placeholder: "Select Dashcam Time"
     });
   }
