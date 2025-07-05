@@ -233,43 +233,36 @@ function calculateAge(dobString) {
 function calculateTimeDifference(realTime, dashcamTime) {
   if (!realTime || !dashcamTime) return '';
   
-  // Parse the date strings in d/m/Y H:i:S format
+  // Parse the date strings in DD/MM/YYYY H:i:S format
   let realDate, dashcamDate;
   
   try {
-    // Try to parse the dates - first attempt with direct constructor
-    realDate = new Date(realTime);
-    dashcamDate = new Date(dashcamTime);
+    // Skip direct constructor and always use manual parsing for DD/MM/YYYY format
+    const parseCustomDate = (dateStr) => {
+      // Format: DD/MM/YYYY H:i:S
+      const parts = dateStr.split(' ');
+      if (parts.length !== 2) return null;
+      
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      
+      if (dateParts.length !== 3 || timeParts.length !== 3) return null;
+      
+      // Note: months are 0-indexed in JavaScript Date
+      return new Date(
+        parseInt(dateParts[2]), // year
+        parseInt(dateParts[1]) - 1, // month (0-indexed)
+        parseInt(dateParts[0]), // day
+        parseInt(timeParts[0]), // hours
+        parseInt(timeParts[1]), // minutes
+        parseInt(timeParts[2])  // seconds
+      );
+    };
     
-    // Check if dates are valid
-    if (isNaN(realDate.getTime()) || isNaN(dashcamDate.getTime())) {
-      // If not valid, try manual parsing for d/m/Y H:i:S format
-      const parseCustomDate = (dateStr) => {
-        // Format: d/m/Y H:i:S
-        const parts = dateStr.split(' ');
-        if (parts.length !== 2) return null;
-        
-        const dateParts = parts[0].split('/');
-        const timeParts = parts[1].split(':');
-        
-        if (dateParts.length !== 3 || timeParts.length !== 3) return null;
-        
-        // Note: months are 0-indexed in JavaScript Date
-        return new Date(
-          parseInt(dateParts[2]), // year
-          parseInt(dateParts[1]) - 1, // month (0-indexed)
-          parseInt(dateParts[0]), // day
-          parseInt(timeParts[0]), // hours
-          parseInt(timeParts[1]), // minutes
-          parseInt(timeParts[2])  // seconds
-        );
-      };
-      
-      realDate = parseCustomDate(realTime);
-      dashcamDate = parseCustomDate(dashcamTime);
-      
-      if (!realDate || !dashcamDate) return '';
-    }
+    realDate = parseCustomDate(realTime);
+    dashcamDate = parseCustomDate(dashcamTime);
+    
+    if (!realDate || !dashcamDate) return '';
   } catch (e) {
     console.error('Error parsing dates:', e);
     return '';
@@ -308,32 +301,26 @@ function formatDateTime(dateTimeStr) {
   let date;
   
   try {
-    // First try standard Date constructor
-    date = new Date(dateTimeStr);
+    // Skip standard Date constructor and always use manual parsing
+    const parts = dateTimeStr.split(' ');
+    if (parts.length !== 2) return '';
     
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      // If not valid, try manual parsing for d/m/Y H:i:S format
-      const parts = dateTimeStr.split(' ');
-      if (parts.length !== 2) return '';
-      
-      const dateParts = parts[0].split('/');
-      const timeParts = parts[1].split(':');
-      
-      if (dateParts.length !== 3 || timeParts.length !== 3) return '';
-      
-      // Note: months are 0-indexed in JavaScript Date
-      date = new Date(
-        parseInt(dateParts[2]), // year
-        parseInt(dateParts[1]) - 1, // month (0-indexed)
-        parseInt(dateParts[0]), // day
-        parseInt(timeParts[0]), // hours
-        parseInt(timeParts[1]), // minutes
-        parseInt(timeParts[2])  // seconds
-      );
-      
-      if (isNaN(date.getTime())) return '';
-    }
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+    
+    if (dateParts.length !== 3 || timeParts.length !== 3) return '';
+    
+    // Note: months are 0-indexed in JavaScript Date
+    date = new Date(
+      parseInt(dateParts[2]), // year
+      parseInt(dateParts[1]) - 1, // month (0-indexed)
+      parseInt(dateParts[0]), // day
+      parseInt(timeParts[0]), // hours
+      parseInt(timeParts[1]), // minutes
+      parseInt(timeParts[2])  // seconds
+    );
+    
+    if (isNaN(date.getTime())) return '';
   } catch (e) {
     console.error('Error parsing date:', e);
     return '';
@@ -351,6 +338,7 @@ function formatDateTime(dateTimeStr) {
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
   
+  // Return in the correct format: DD/MM/YYYY
   return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}${ampm}`;
 }
 
@@ -452,17 +440,37 @@ function resetDashcamForm() {
 
 // DOMContentLoaded event
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize Flatpickr for date/time pickers
+  // Initialize Rolldate for date/time pickers
   if (dashcamRealTimeInput) {
-    flatpickr(dashcamRealTimeInput, {
-      enableTime: true,
-      dateFormat: "d/m/Y H:i:S",
-      time_24hr: true,
-      enableSeconds: true,
-      allowInput: false, // Disable manual input
-      disableMobile: true,
-      defaultDate: new Date(), // Set current date/time as default
-      placeholder: "Select Real Time"
+    new Rolldate({
+      el: dashcamRealTimeInput,
+      format: 'DD/MM/YYYY hh:mm:ss',
+      beginYear: 2000,
+      endYear: 2100,
+      lang: {
+        title: 'Select Real Time',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        year: '',
+        month: '',
+        day: '',
+        hour: '',
+        min: '',
+        sec: ''
+      },
+      trigger: 'click',
+      init: function() {
+        // Set current date/time as default
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        dashcamRealTimeInput.value = formattedDate;
+      }
     });
     
     // Add readonly attribute to prevent editing
@@ -470,21 +478,35 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   if (dashcamTimeInput) {
-    flatpickr(dashcamTimeInput, {
-      enableTime: true,
-      dateFormat: "d/m/Y H:i:S",
-      time_24hr: true,
-      enableSeconds: true,
-      allowInput: true,
-      disableMobile: true,
-      placeholder: "Select Dashcam Time",
-      onChange: function(selectedDates, dateStr, instance) {
+    new Rolldate({
+      el: dashcamTimeInput,
+      format: 'DD/MM/YYYY hh:mm:ss',
+      beginYear: 2000,
+      endYear: 2100,
+      lang: {
+        title: 'Select Dashcam Time',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        year: '',
+        month: '',
+        day: '',
+        hour: '',
+        min: '',
+        sec: ''
+      },
+      trigger: 'click',
+      confirm: function(date) {
         // Update real time input to current date/time when dashcam time is selected
-        if (dashcamRealTimeInput && dateStr) {
-          const realTimeFlatpickr = dashcamRealTimeInput._flatpickr;
-          if (realTimeFlatpickr) {
-            realTimeFlatpickr.setDate(new Date());
-          }
+        if (dashcamRealTimeInput && date) {
+          const now = new Date();
+          const day = String(now.getDate()).padStart(2, '0');
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const year = now.getFullYear();
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+          dashcamRealTimeInput.value = formattedDate;
         }
       }
     });
