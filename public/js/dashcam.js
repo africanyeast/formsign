@@ -1,0 +1,471 @@
+// Dashcam Form JavaScript
+
+// DOM Elements
+const dashcamSigCanvasEl = document.getElementById("dashcamSigCanvas");
+const dashcamWitnessSigCanvasEl = document.getElementById("dashcamWitnessSigCanvas");
+const dashcamForm = document.getElementById('dashcamForm');
+const dashcamReportType = document.getElementById('dashcamReportType');
+const dashcamFullNameInput = document.getElementById('dashcamFullName');
+const dashcamDobInput = document.getElementById('dashcamDob');
+const dashcamReportNotesTextarea = document.getElementById('dashcamReportNotes');
+const dashcamRealTimeInput = document.getElementById('dashcamRealTime');
+const dashcamTimeInput = document.getElementById('dashcamTime');
+
+// Create a helper div to get computed styles for the placeholder text
+const dashcamPlaceholderStyleHelper = document.createElement('div');
+dashcamPlaceholderStyleHelper.className = 'signature-placeholder-text';
+dashcamPlaceholderStyleHelper.style.display = 'none';
+document.body.appendChild(dashcamPlaceholderStyleHelper);
+
+// Signature pad instances
+let dashcamSignaturePad, dashcamWitnessSignaturePad;
+
+// Track if canvases have signatures
+let dashcamCanvasHasSignature = {
+  dashcamSigCanvas: false,
+  dashcamWitnessSigCanvas: false
+};
+
+// Track if canvases have placeholders
+let dashcamCanvasHasPlaceholder = {
+  dashcamSigCanvas: true,
+  dashcamWitnessSigCanvas: true
+};
+
+function initializeDashcamSignaturePad(canvas, options = {}) {
+  if (!canvas || canvas.offsetParent === null) return null;
+  
+  // Ensure canvas has dimensions and proper scaling for device pixel ratio
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = canvas.offsetHeight * ratio;
+  canvas.getContext("2d").scale(ratio, ratio);
+  
+  // Create signature pad instance with optimized options for smooth drawing
+  const defaultOptions = {
+    // Use a function for dotSize to create more natural dots
+    dotSize: function () {
+      return (this.minWidth + this.maxWidth) / 2;
+    },
+    minWidth: 0.5,
+    maxWidth: 2.5,
+    penColor: 'black',
+    backgroundColor: 'rgba(0,0,0,0)',
+    // Set throttle to 0 for more responsive drawing
+    throttle: 0,
+    // Reduce minDistance for more precise drawing
+    minDistance: 1,
+    // Increase velocityFilterWeight for smoother lines
+    velocityFilterWeight: 0.8,
+    // Add canvas context options for better rendering
+    canvasContextOptions: {
+      lineCap: 'round',
+      lineJoin: 'round',
+      miterLimit: 10
+    }
+  };
+  
+  // Merge default options with provided options
+  const mergedOptions = { ...defaultOptions, ...options };
+  
+  // Create and return the signature pad instance
+  const signaturePad = new SignaturePad(canvas, mergedOptions);
+  
+  // Add placeholder text
+  drawDashcamSignaturePlaceholder(canvas);
+  
+  // Add event listeners for the signature pad
+  signaturePad.addEventListener("beginStroke", () => {
+    // Clear placeholder when drawing begins
+    if (dashcamCanvasHasPlaceholder[canvas.id]) {
+      clearDashcamPlaceholder(canvas);
+      dashcamCanvasHasPlaceholder[canvas.id] = false;
+    }
+  });
+  
+  signaturePad.addEventListener("endStroke", () => {
+    // Update signature flag
+    dashcamCanvasHasSignature[canvas.id] = !signaturePad.isEmpty();
+  });
+  
+  return signaturePad;
+}
+
+function clearDashcamPlaceholder(canvas) {
+  if (canvas && canvas.offsetParent !== null) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function drawDashcamSignaturePlaceholder(canvas) {
+  if (canvas && canvas.offsetParent !== null) {
+    const ctx = canvas.getContext('2d');
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    
+    if (canvas.width === 0 || canvas.height === 0) {
+      canvas.width = canvas.offsetWidth * ratio;
+      canvas.height = 150 * ratio; 
+      ctx.scale(ratio, ratio);
+    }
+    
+    // Clear canvas first
+    ctx.clearRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+
+    // Get styles from the helper div
+    const computedStyle = window.getComputedStyle(dashcamPlaceholderStyleHelper);
+    const fontStyle = computedStyle.getPropertyValue('font-style');
+    const fontSize = computedStyle.getPropertyValue('font-size');
+    const fontFamily = computedStyle.getPropertyValue('font-family');
+    const color = computedStyle.getPropertyValue('color');
+
+    ctx.font = `${fontStyle} ${fontSize} ${fontFamily}`;
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    // Customize placeholder text based on canvas ID
+    let placeholderText = "Sign here";
+    
+    switch (canvas.id) {
+      case 'dashcamSigCanvas':
+        placeholderText = "Customer Sign Here";
+        break;
+      case 'dashcamWitnessSigCanvas':
+        placeholderText = "Witness Sign Here";
+        break;
+      default:
+        placeholderText = "Sign Here";
+    }
+    
+    ctx.fillText(placeholderText, (canvas.width / ratio) / 2, (canvas.height / ratio) / 2);
+    
+    // Mark that this canvas has a placeholder
+    dashcamCanvasHasPlaceholder[canvas.id] = true;
+  }
+}
+
+function clearDashcamCanvas(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  
+  let signaturePad;
+  
+  // Get the correct signature pad instance
+  switch (canvasId) {
+    case 'dashcamSigCanvas':
+      signaturePad = dashcamSignaturePad;
+      break;
+    case 'dashcamWitnessSigCanvas':
+      signaturePad = dashcamWitnessSignaturePad;
+      break;
+    default:
+      return;
+  }
+  
+  if (signaturePad) {
+    signaturePad.clear();
+    drawDashcamSignaturePlaceholder(canvas);
+    
+    // Reset signature flag
+    dashcamCanvasHasSignature[canvasId] = false;
+    // Set placeholder flag
+    dashcamCanvasHasPlaceholder[canvasId] = true;
+    
+    // Clear hidden input
+    const hiddenInputId = canvasId.replace('Canvas', 'Signature'); 
+    const hiddenInput = document.getElementById(hiddenInputId);
+    if (hiddenInput) {
+      hiddenInput.value = '';
+    }
+  }
+}
+
+function isDashcamCanvasEmpty(canvas) {
+  if (!canvas || canvas.offsetParent === null) return true;
+  
+  let signaturePad;
+  
+  // Get the correct signature pad instance
+  switch (canvas.id) {
+    case 'dashcamSigCanvas':
+      signaturePad = dashcamSignaturePad;
+      break;
+    case 'dashcamWitnessSigCanvas':
+      signaturePad = dashcamWitnessSignaturePad;
+      break;
+    default:
+      return true;
+  }
+  
+  if (signaturePad) {
+    return signaturePad.isEmpty();
+  }
+  
+  return true;
+}
+
+function calculateAge(dobString) {
+  if (!dobString) return '';
+  
+  // Parse DD/MM/YYYY format
+  const parts = dobString.split('/');
+  if (parts.length !== 3) return '';
+  
+  // Create date with parts[0] as day, parts[1] as month (0-indexed), parts[2] as year
+  const birthDate = new Date(parts[2], parts[1] - 1, parts[0]);
+  
+  // Check if the date is valid
+  if (isNaN(birthDate.getTime())) {
+    return ''; // Return empty string for invalid date formats
+  }
+  
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+// Calculate time difference between real time and dashcam time
+function calculateTimeDifference(realTime, dashcamTime) {
+  if (!realTime || !dashcamTime) return '';
+  
+  const realDate = new Date(realTime);
+  const dashcamDate = new Date(dashcamTime);
+  
+  if (isNaN(realDate.getTime()) || isNaN(dashcamDate.getTime())) {
+    return '';
+  }
+  
+  // Calculate difference in milliseconds
+  const diffMs = realDate.getTime() - dashcamDate.getTime();
+  
+  // Convert to minutes for easier reading
+  const diffMinutes = Math.round(diffMs / 60000);
+  
+  if (diffMinutes === 0) {
+    return "The dashcam time is accurate.";
+  } else if (diffMinutes > 0) {
+    return `Therefore the dashcam time is ${Math.abs(diffMinutes)} minute${Math.abs(diffMinutes) !== 1 ? 's' : ''} slow.`;
+  } else {
+    return `Therefore the dashcam time is ${Math.abs(diffMinutes)} minute${Math.abs(diffMinutes) !== 1 ? 's' : ''} fast.`;
+  }
+}
+
+function formatDateTime(dateTimeStr) {
+  if (!dateTimeStr) return '';
+  
+  const date = new Date(dateTimeStr);
+  
+  if (isNaN(date.getTime())) {
+    return '';
+  }
+  
+  // Format as DD/MM/YYYY HH:MM:SS AM/PM
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  let hours = date.getHours();
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}${ampm}`;
+}
+
+function prepareDashcamFormData() {
+  if (dashcamSignaturePad && dashcamSignaturePad.isEmpty()) {
+    alert("Customer signature is required.");
+    document.getElementById("dashcamSignature").value = '';
+    return false;
+  }
+  
+  document.getElementById("dashcamSignature").value = dashcamSignaturePad.toDataURL("image/png");
+  
+  // Handle Dashcam Witness Signature
+  const dashcamWitnessNameInput = document.getElementById('dashcamWitnessName');
+  const dashcamWitnessSignatureValue = dashcamWitnessSignaturePad && !dashcamWitnessSignaturePad.isEmpty() 
+                            ? dashcamWitnessSignaturePad.toDataURL("image/png") 
+                            : '';
+  document.getElementById("dashcamWitnessSignature").value = dashcamWitnessSignatureValue;
+
+  if (dashcamWitnessSignatureValue !== '' && dashcamWitnessNameInput && dashcamWitnessNameInput.value.trim() === '') {
+    alert("Witness name is required when a witness signature is provided for the dashcam report.");
+    dashcamWitnessNameInput.focus();
+    return false;
+  }
+  
+  if (dashcamWitnessNameInput && dashcamWitnessNameInput.value.trim() !== '' && dashcamWitnessSignatureValue === ''){
+    alert("Witness signature is required when a witness name is provided for the dashcam report.");
+    return false;
+  }
+
+  return true;
+}
+
+// Add event listener for report type select
+if (dashcamReportType) {
+  dashcamReportType.addEventListener('change', function() {
+    const fullName = dashcamFullNameInput.value;
+    const dob = dashcamDobInput.value;
+    const age = calculateAge(dob);
+    const reportType = this.value;
+    const realTime = dashcamRealTimeInput.value;
+    const dashcamTime = dashcamTimeInput.value;
+    
+    // Format the times for display
+    const formattedRealTime = formatDateTime(realTime);
+    const formattedDashcamTime = formatDateTime(dashcamTime);
+    
+    // Calculate time difference
+    const timeDifference = calculateTimeDifference(realTime, dashcamTime);
+    
+    let defaultText = '';
+
+    if (reportType === 'typeA') {
+      defaultText = `My name is ${fullName}.\nI am currently ${age}.\nThe real time is ${formattedRealTime}.\nThe dashcam time is ${formattedDashcamTime}.\n${timeDifference}`;
+    } else if (reportType === 'typeB') {
+      defaultText = `My name is ${fullName}.\nI am currently ${age}.\nThe real time is ${formattedRealTime}.\nThe dashcam time is ${formattedDashcamTime}.\n${timeDifference}`;
+    }
+    
+    dashcamReportNotesTextarea.value = defaultText;
+  });
+}
+
+// Form submission handler
+function handleDashcamFormSubmit(event) {
+  event.preventDefault();
+  
+  // Validate and prepare form data
+  if (!prepareDashcamFormData()) {
+    return false;
+  }
+  
+  // Generate PDF using the dashcam-specific function
+  if (typeof generateDashcamPDF === 'function') {
+    generateDashcamPDF();
+  } else {
+    console.error('Dashcam PDF generation module not loaded');
+    alert('PDF generation is not available. Please refresh the page.');
+  }
+  
+  return false;
+}
+
+// Reset form function
+function resetDashcamForm() {
+  // Reset all form fields
+  dashcamForm.reset();
+  
+  // Clear signatures
+  clearDashcamCanvas('dashcamSigCanvas');
+  clearDashcamCanvas('dashcamWitnessSigCanvas');
+  
+  // Reset hidden inputs
+  document.getElementById("dashcamSignature").value = '';
+  document.getElementById("dashcamWitnessSignature").value = '';
+  
+  // Clear report notes
+  dashcamReportNotesTextarea.value = '';
+}
+
+// DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Flatpickr for date/time pickers
+  if (dashcamRealTimeInput) {
+    flatpickr(dashcamRealTimeInput, {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i:S",
+    //   defaultDate: new Date(),
+      time_24hr: true
+    });
+  }
+  
+  if (dashcamTimeInput) {
+    flatpickr(dashcamTimeInput, {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i:S",
+    //   defaultDate: new Date(),
+      time_24hr: true
+    });
+  }
+  
+  // Ensure the helper is in the DOM before trying to get styles
+  if (!document.body.contains(dashcamPlaceholderStyleHelper)) {
+    document.body.appendChild(dashcamPlaceholderStyleHelper);
+  }
+
+  // Initialize signature pads
+  if (dashcamSigCanvasEl) {
+    dashcamSignaturePad = initializeDashcamSignaturePad(dashcamSigCanvasEl);
+  }
+  
+  if (dashcamWitnessSigCanvasEl) {
+    dashcamWitnessSignaturePad = initializeDashcamSignaturePad(dashcamWitnessSigCanvasEl);
+    
+    // Add event listener to dashcam witness position select to update pen color
+    document.getElementById('dashcamWitnessPosition').addEventListener('change', function() {
+      const dashcamWitnessPosition = this.value;
+      let penColor = 'black';
+      
+      switch (dashcamWitnessPosition) {
+        case 'supervisor': penColor = 'blue'; break;
+        case 'manager': penColor = 'red'; break;
+        case 'director': penColor = 'green'; break;
+        default: penColor = 'black';
+      }
+      
+      if (dashcamWitnessSignaturePad) {
+        dashcamWitnessSignaturePad.penColor = penColor;
+      }
+    });
+  }
+  
+  // Add form submit event listener
+  if (dashcamForm) {
+    dashcamForm.addEventListener('submit', handleDashcamFormSubmit);
+  }
+  
+  // Add event listeners for clear buttons
+  document.querySelectorAll('.clear-sig-btn').forEach(button => {
+    const canvasId = button.dataset.canvasId;
+    if (canvasId === 'dashcamSigCanvas' || canvasId === 'dashcamWitnessSigCanvas') {
+      button.addEventListener('click', function() {
+        clearDashcamCanvas(canvasId);
+      });
+    }
+  });
+  
+  // Add event listeners for form toggle
+  document.getElementById('showDashcamForm').addEventListener('change', function() {
+    if (this.checked) {
+      document.getElementById('dashcamForm').style.display = 'block';
+      document.getElementById('staffForm').style.display = 'none';
+      document.getElementById('customerForm').style.display = 'none';
+      document.getElementById('dashcamFormHeading').style.display = 'block';
+      document.getElementById('staffFormHeading').style.display = 'none';
+      document.getElementById('customerFormHeading').style.display = 'none';
+      
+      // Reinitialize dashcam signature pads when switching to dashcam form
+      if (dashcamSigCanvasEl) {
+        dashcamSignaturePad = initializeDashcamSignaturePad(dashcamSigCanvasEl);
+      }
+      
+      if (dashcamWitnessSigCanvasEl) {
+        dashcamWitnessSignaturePad = initializeDashcamSignaturePad(dashcamWitnessSigCanvasEl);
+      }
+    }
+  });
+  
+  // Add reset button event listener
+  const resetDashcamFormBtn = document.getElementById('resetDashcamForm');
+  if (resetDashcamFormBtn) {
+    resetDashcamFormBtn.addEventListener('click', resetDashcamForm);
+  }
+});

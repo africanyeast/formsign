@@ -5,9 +5,12 @@
   <title>File Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.min.css"> 
+  <link rel="stylesheet" href="css/style.css"> 
   <!-- Add Signature Pad library -->
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <!-- Add Flatpickr for date/time picker -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -21,39 +24,140 @@
 
             <div class="mb-4">
               <div class="btn-group d-flex" role="group" aria-label="User type selection">
-                <input type="radio" class="btn-check" name="userType" id="userTypeStaff" value="staff" autocomplete="off">
-                <label class="btn btn-outline-primary w-100" for="userTypeStaff">Staff</label>
+                <input type="radio" class="btn-check" name="formType" id="showStaffForm" value="staff" autocomplete="off">
+                <label class="btn btn-outline-primary w-100" for="showStaffForm">Staff</label>
 
-                <input type="radio" class="btn-check" name="userType" id="userTypeCustomer" value="customer" autocomplete="off">
-                <label class="btn btn-outline-primary w-100" for="userTypeCustomer">Customer</label>
+                <input type="radio" class="btn-check" name="formType" id="showCustomerForm" value="customer" autocomplete="off">
+                <label class="btn btn-outline-primary w-100" for="showCustomerForm">Customer</label>
+                
+                <input type="radio" class="btn-check" name="formType" id="showDashcamForm" value="dashcam" autocomplete="off">
+                <label class="btn btn-outline-primary w-100" for="showDashcamForm">Dashcam</label>
               </div>
             </div>
 
-            <form method="POST" id="reportForm" style="display: none;">
+            <!-- Form Type Headings -->
+            <div id="staffFormHeading" class="text-center mb-4" style="display: none;">
+              <small class="text-muted">Welcome to the staff report page</small>
+            </div>
+            <div id="customerFormHeading" class="text-center mb-4" style="display: none;">
+              <small class="text-muted">Welcome to the customer report page</small>
+            </div>
+            <div id="dashcamFormHeading" class="text-center mb-4" style="display: none;">
+              <small class="text-muted">Welcome to the dashcam report page</small>
+            </div>
+
+            <!-- Staff Form -->
+            <form method="POST" id="staffForm" style="display: none;">
               <div class="mb-3">
-                <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name" required>
+                <input type="text" class="form-control" id="staffFullName" name="fullName" placeholder="Full Name" required>
               </div>
 
               <!-- Add Subject field -->
               <div class="mb-3">
-                <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject" required>
+                <input type="text" class="form-control" id="staffSubject" name="subject" placeholder="Subject" required>
               </div>
               
               <!-- Add Place field -->
               <div class="mb-3">
-                <input type="text" class="form-control" id="place" name="place" placeholder="Place" required>
+                <input type="text" class="form-control" id="staffPlace" name="place" placeholder="Place" required>
               </div>
 
-              <div class="mb-3 age-field">
-                <input type="number" class="form-control" id="age" name="age" placeholder="Age" required>
+              <div class="mb-3">
+                <input type="number" class="form-control" id="staffAge" name="age" placeholder="Age" required>
               </div>
 
-              <div class="mb-3 dob-field" style="display: none;">
-                <input type="text" class="form-control" id="dob" name="dob" placeholder="Date of Birth (DD/MM/YYYY)">
+              <div class="mb-3">
+                <select class="form-select" id="staffReportTemplate" name="staffReport" title="Staff Report" required>
+                  <option value="" selected>Staff Report Template</option>
+                  <option value="staff1">Staff 1</option>
+                  <option value="staff2">Staff 2</option>
+                  <option value="staff3">Staff 3</option>
+                </select>
               </div>
 
-              <div class="mb-3 customer-fields report-type-field" style="display: none;">
-                <select class="form-select" id="reportType" name="reportType" title="Report Type">
+              <div class="mb-3">
+                <textarea class="form-control" id="staffReportNotes" name="reportNotes" rows="5" placeholder="Type your report notes here..." required></textarea>
+              </div>
+
+              <div class="mb-3">
+                <select class="form-select" id="staffType" name="staffType" title="Staff Type" required>
+                  <option value="" selected>Position</option> 
+                  <option value="supervisor">Supervisor</option>
+                  <option value="manager">Manager</option>
+                  <option value="director">Director</option>
+                  <option value="sales">Sales</option> 
+                </select>
+              </div>
+
+              <!-- Office field for staff -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="staffOffice" name="staffOffice" placeholder="Office Location">
+              </div>
+
+              <div class="mb-3 position-relative sigCanvas-container">
+                <canvas id="staffSigCanvas" class="sigCanvas"></canvas>
+                <div class="mt-1 text-end">
+                  <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="staffSigCanvas">Clear</button>
+                </div>
+              </div>
+
+              <div class="witness-section"> 
+                <div class="mb-3">
+                  <input type="text" class="form-control" id="witnessName" name="witnessName" placeholder="Witness Name">
+                </div>
+                
+                <div class="mb-3">
+                  <select class="form-select" id="witnessPosition" name="witnessPosition" title="Witness Position">
+                    <option value="" selected>Witness Position</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="manager">Manager</option>
+                    <option value="director">Director</option>
+                    <option value="sales">Sales</option>
+                  </select>
+                </div>                
+
+
+                <div class="mb-3 position-relative sigCanvas-container">
+                  <canvas id="witnessSigCanvas" class="sigCanvas"></canvas>
+                  <div class="mt-1 text-end">
+                    <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="witnessSigCanvas">Clear</button>
+                  </div>
+                </div>
+              </div>
+
+              <input type="hidden" name="staffSignature" id="staffSignature">
+              <input type="hidden" name="witnessSignature" id="witnessSignature">
+              <input type="hidden" name="userType" value="staff">
+              <input type="hidden" name="witnessPosition" id="hiddenWitnessPosition">
+
+              <div class="mt-3">
+                <button type="submit" class="btn btn-primary w-100 mb-2">Generate PDF</button>
+                <button type="button" id="resetStaffForm" class="btn btn-secondary w-100">Reset All</button>
+              </div>
+            </form>
+
+            <!-- Customer Form -->
+            <form method="POST" id="customerForm" style="display: none;">
+              <div class="mb-3">
+                <input type="text" class="form-control" id="customerFullName" name="fullName" placeholder="Full Name" required>
+              </div>
+
+              <!-- Add Subject field -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="customerSubject" name="subject" placeholder="Subject" required>
+              </div>
+              
+              <!-- Add Place field -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="customerPlace" name="place" placeholder="Place" required>
+              </div>
+
+              <div class="mb-3">
+                <input type="text" class="form-control" id="customerDob" name="dob" placeholder="Date of Birth (DD/MM/YYYY)" required>
+              </div>
+
+              <div class="mb-3">
+                <select class="form-select" id="customerReportType" name="reportType" title="Report Type" required>
                   <option value="" selected>Report Type</option>
                   <option value="deposit">Deposit</option>
                   <option value="cancel">Cancel</option>
@@ -61,93 +165,140 @@
               </div>
 
               <div class="mb-3">
-                <textarea class="form-control" id="reportNotes" name="reportNotes" rows="5" placeholder="Type your report notes here..." required></textarea>
+                <textarea class="form-control" id="customerReportNotes" name="reportNotes" rows="5" placeholder="Type your report notes here..." required></textarea>
               </div>
 
-              <div class="staff-fields">
-                <div class="mb-3 staff-type-fields">
-                  <select class="form-select" id="staffType" name="staffType" title="Staff Type" required>
-                    <option value="" selected>Position</option> 
-                    <option value="supervisor">Supervisor</option>
-                    <option value="manager">Manager</option>
-                    <option value="director">Director</option>
-                    <option value="sales">Sales</option> 
-                  </select>
-                </div>
-
-                <div class="mb-3 position-relative sigCanvas-container">
-                  <canvas id="staffSigCanvas" class="sigCanvas"></canvas>
-                  <div class="mt-1 text-end">
-                    <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="staffSigCanvas">Clear</button>
-                  </div>
-                </div>
-
-                <div class="witness-section"> 
-                  <div class="mb-3 witness-name-field">
-                    <input type="text" class="form-control" id="witnessName" name="witnessName" placeholder="Witness Name" required>
-                  </div>
-                  
-                  <!-- Add witness position field for staff reports -->
-                  <div class="mb-3 witness-position-field">
-                    <select class="form-select" id="witnessPosition" name="witnessPosition" title="Witness Position">
-                      <option value="" selected>Witness Position</option>
-                      <option value="supervisor">Supervisor</option>
-                      <option value="manager">Manager</option>
-                      <option value="director">Director</option>
-                      <option value="sales">Sales</option>
-                    </select>
-                  </div>
-
-                  <div class="mb-3 witness-signature-field position-relative sigCanvas-container">
-                    <canvas id="witnessSigCanvas" class="sigCanvas"></canvas>
-                    <div class="mt-1 text-end">
-                      <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="witnessSigCanvas">Clear</button>
-                    </div>
-                  </div>
+              <div class="mb-3 position-relative sigCanvas-container">
+                <canvas id="customerSigCanvas" class="sigCanvas"></canvas>
+                <div class="mt-1 text-end">
+                  <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="customerSigCanvas">Clear</button>
                 </div>
               </div>
 
-              <div class="customer-fields">
-                <div class="mb-3 position-relative sigCanvas-container">
-                  <canvas id="customerSigCanvas" class="sigCanvas"></canvas>
-                  <div class="mt-1 text-end">
-                    <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="customerSigCanvas">Clear</button>
-                  </div>
-                </div>
+              <!-- Witness fields for Customer -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="customerWitnessName" name="customerWitnessName" placeholder="Witness Name">
+              </div>
 
-                <!-- Witness fields for Customer -->
-                <div class="mb-3 witness-name-field">
-                  <input type="text" class="form-control" id="customerWitnessName" name="customerWitnessName" placeholder="Witness Name">
-                </div>
+              <div class="mb-3">
+                <select class="form-select" id="customerWitnessPosition" name="customerWitnessPosition" title="Witness Position">
+                  <option value="" selected>Witness Position</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="manager">Manager</option>
+                  <option value="director">Director</option>
+                  <option value="sales">Sales</option>
+                </select>
+              </div>
+              
+              <!-- Add Office field for witness -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="customerWitnessOffice" name="customerWitnessOffice" placeholder="Office Location">
+              </div>
 
-                <!-- Add position select for customer witness -->
-                <div class="mb-3 customer-witness-position-field">
-                  <select class="form-select" id="customerWitnessPosition" name="customerWitnessPosition" title="Witness Position">
-                    <option value="" selected>Witness Position</option>
-                    <option value="supervisor">Supervisor</option>
-                    <option value="manager">Manager</option>
-                    <option value="director">Director</option>
-                    <option value="sales">Sales</option>
-                  </select>
-                </div>
-
-                <div class="mb-3 witness-signature-field position-relative sigCanvas-container">
-                  <canvas id="customerWitnessSigCanvas" class="sigCanvas"></canvas>
-                  <div class="mt-1 text-end">
-                    <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="customerWitnessSigCanvas">Clear</button>
-                  </div>
+              <div class="mb-3 position-relative sigCanvas-container">
+                <canvas id="customerWitnessSigCanvas" class="sigCanvas"></canvas>
+                <div class="mt-1 text-end">
+                  <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="customerWitnessSigCanvas">Clear</button>
                 </div>
               </div>
 
-              <input type="hidden" name="staffSignature" id="staffSignature">
-              <input type="hidden" name="witnessSignature" id="witnessSignature">
               <input type="hidden" name="customerSignature" id="customerSignature">
               <input type="hidden" name="customerWitnessSignature" id="customerWitnessSignature">
-              <input type="hidden" name="userType" id="hiddenUserType">
-              <input type="hidden" name="witnessPosition" id="hiddenWitnessPosition">
+              <input type="hidden" name="userType" value="customer">
 
-              <button type="submit" class="btn btn-primary w-100">Generate PDF</button>
-        </form>
+              <div class="mt-3">
+                <button type="submit" class="btn btn-primary w-100 mb-2">Generate PDF</button>
+                <button type="button" id="resetCustomerForm" class="btn btn-secondary w-100">Reset All</button>
+              </div>
+            </form>
+
+            <!-- Dashcam Form -->
+            <form method="POST" id="dashcamForm" style="display: none;">
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamFullName" name="fullName" placeholder="Full Name" required>
+              </div>
+
+              <!-- Add Subject field -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamSubject" name="subject" placeholder="Subject" required>
+              </div>
+              
+              <!-- Add Place field -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamPlace" name="place" placeholder="Place" required>
+              </div>
+
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamDob" name="dob" placeholder="Date of Birth (DD/MM/YYYY)" required>
+              </div>
+
+              <!-- Add Real Time field with date/time picker -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamRealTime" name="realTime" placeholder="Real Time" required>
+              </div>
+
+              <!-- Add Dashcam Time field with date/time picker -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamTime" name="dashcamTime" placeholder="Dashcam Time" required>
+              </div>
+
+              <div class="mb-3">
+                <select class="form-select" id="dashcamReportType" name="reportType" title="Report Type" required>
+                  <option value="" selected>Report Type</option>
+                  <option value="typeA">Type A</option>
+                  <option value="typeA">Type B</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <textarea class="form-control" id="dashcamReportNotes" name="reportNotes" rows="5" placeholder="Type your report notes here..." required></textarea>
+              </div>
+
+              <div class="mb-3 position-relative sigCanvas-container">
+                <canvas id="dashcamSigCanvas" class="sigCanvas"></canvas>
+                <div class="mt-1 text-end">
+                  <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="dashcamSigCanvas">Clear</button>
+                </div>
+              </div>
+
+              <!-- Witness fields for Dashcam -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamWitnessName" name="dashcamWitnessName" placeholder="Witness Name">
+              </div>
+
+              <div class="mb-3">
+                <select class="form-select" id="dashcamWitnessPosition" name="dashcamWitnessPosition" title="Witness Position">
+                  <option value="" selected>Witness Position</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="manager">Manager</option>
+                  <option value="director">Director</option>
+                  <option value="sales">Sales</option>
+                </select>
+              </div>
+              
+              <!-- Add Office field for witness -->
+              <div class="mb-3">
+                <input type="text" class="form-control" id="dashcamWitnessOffice" name="dashcamWitnessOffice" placeholder="Office Location">
+              </div>
+
+              <div class="mb-3 position-relative sigCanvas-container">
+                <canvas id="dashcamWitnessSigCanvas" class="sigCanvas"></canvas>
+                <div class="mt-1 text-end">
+                  <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="dashcamWitnessSigCanvas">Clear</button>
+                </div>
+              </div>
+
+              <input type="hidden" name="dashcamSignature" id="dashcamSignature">
+              <input type="hidden" name="dashcamWitnessSignature" id="dashcamWitnessSignature">
+              <input type="hidden" name="userType" value="dashcam">
+
+              <div class="mt-3">
+                <button type="submit" class="btn btn-primary w-100 mb-2">Generate PDF</button>
+                <button type="button" id="resetDashcamForm" class="btn btn-secondary w-100">Reset All</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -155,7 +306,11 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-  <script src="script/script.js"></script>
-  <script src="script/generate.js"></script>
+  <script src="js/staff.js"></script>
+  <script src="js/customer.js"></script>
+  <script src="js/dashcam.js"></script>
+  <script src="js/generate-staff.js"></script>
+  <script src="js/generate-customer.js"></script>
+  <script src="js/generate-dashcam.js"></script>
 </body>
 </html>
