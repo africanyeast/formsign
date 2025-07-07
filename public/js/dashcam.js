@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
           clear: 'fa-solid fa-trash',
           close: 'fa-solid fa-xmark'
         },
-        sideBySide: true,
+        sideBySide: false,
         keepOpen: false,
         buttons: {
           today: false,
@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
           clear: 'fa-solid fa-trash',
           close: 'fa-solid fa-xmark'
         },
-        sideBySide: true,
+        sideBySide: false,
         keepOpen: true,
         buttons: {
           today: false,
