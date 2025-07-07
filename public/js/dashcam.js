@@ -440,76 +440,116 @@ function resetDashcamForm() {
 
 // DOMContentLoaded event
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize Rolldate for date/time pickers
+  // Initialize Tempus Dominus for date/time pickers
+  let realTimePicker;
+  let dashcamTimePicker;
+  
   if (dashcamRealTimeInput) {
-    new Rolldate({
-      el: dashcamRealTimeInput,
-      format: 'DD/MM/YYYY hh:mm:ss',
-      beginYear: 2000,
-      endYear: 2100,
-      lang: {
-        title: 'Select Real Time',
-        cancel: 'Cancel',
-        confirm: 'Confirm',
-        year: '',
-        month: '',
-        day: '',
-        hour: '',
-        min: '',
-        sec: ''
+    realTimePicker = new tempusDominus.TempusDominus(dashcamRealTimeInput, {
+      display: {
+        components: {
+          calendar: true,
+          date: true,
+          month: true,
+          year: true,
+          decades: true,
+          clock: true,
+          hours: true,
+          minutes: true,
+          seconds: true
+        },
+        icons: {
+          time: 'fa-solid fa-clock',
+          date: 'fa-solid fa-calendar',
+          up: 'fa-solid fa-arrow-up',
+          down: 'fa-solid fa-arrow-down',
+          previous: 'fa-solid fa-chevron-left',
+          next: 'fa-solid fa-chevron-right',
+          today: 'fa-solid fa-calendar-check',
+          clear: 'fa-solid fa-trash',
+          close: 'fa-solid fa-xmark'
+        },
+        sideBySide: true,
+        keepOpen: false,
+        buttons: {
+          today: false,
+          clear: true,
+          close: true
+        },
       },
-      trigger: 'click',
-      init: function() {
-        // Set current date/time as default
-        const now = new Date();
-        const day = String(now.getDate()).padStart(2, '0');
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const year = now.getFullYear();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-        dashcamRealTimeInput.value = formattedDate;
-      }
+      localization: {
+        format: 'dd/MM/yyyy HH:mm:ss',
+        locale: 'en-GB' // Use British English for DD/MM/YYYY format
+      },
+      restrictions: {
+        minDate: new Date(2000, 0, 1), // Jan 1, 2000
+        maxDate: new Date(2100, 11, 31) // Dec 31, 2100
+      },
+      useCurrent: true
     });
+    
+    // Set current date/time as default
+    const now = new Date();
+    realTimePicker.dates.setValue(tempusDominus.DateTime.convert(now));
     
     // Add readonly attribute to prevent editing
     dashcamRealTimeInput.setAttribute('readonly', 'readonly');
   }
   
   if (dashcamTimeInput) {
-    new Rolldate({
-      el: dashcamTimeInput,
-      format: 'DD/MM/YYYY hh:mm:ss',
-      beginYear: 2000,
-      endYear: 2100,
-      lang: {
-        title: 'Select Dashcam Time',
-        cancel: 'Cancel',
-        confirm: 'Confirm',
-        year: '',
-        month: '',
-        day: '',
-        hour: '',
-        min: '',
-        sec: ''
+    dashcamTimePicker = new tempusDominus.TempusDominus(dashcamTimeInput, {
+      display: {
+        components: {
+          calendar: true,
+          date: true,
+          month: true,
+          year: true,
+          decades: true,
+          clock: true,
+          hours: true,
+          minutes: true,
+          seconds: true
+        },
+        icons: {
+          time: 'fa-solid fa-clock',
+          date: 'fa-solid fa-calendar',
+          up: 'fa-solid fa-arrow-up',
+          down: 'fa-solid fa-arrow-down',
+          previous: 'fa-solid fa-chevron-left',
+          next: 'fa-solid fa-chevron-right',
+          today: 'fa-solid fa-calendar-check',
+          clear: 'fa-solid fa-trash',
+          close: 'fa-solid fa-xmark'
+        },
+        sideBySide: true,
+        keepOpen: true,
+        buttons: {
+          today: false,
+          clear: true,
+          close: true
+        },
       },
-      trigger: 'click',
-      confirm: function(date) {
-        // Update real time input to current date/time when dashcam time is selected
-        if (dashcamRealTimeInput && date) {
-          const now = new Date();
-          const day = String(now.getDate()).padStart(2, '0');
-          const month = String(now.getMonth() + 1).padStart(2, '0');
-          const year = now.getFullYear();
-          const hours = String(now.getHours()).padStart(2, '0');
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const seconds = String(now.getSeconds()).padStart(2, '0');
-          const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-          dashcamRealTimeInput.value = formattedDate;
-        }
+      localization: {
+        format: 'dd/MM/yyyy HH:mm:ss',
+        locale: 'en-GB' // Use British English for DD/MM/YYYY format
+      },
+      restrictions: {
+        minDate: new Date(2000, 0, 1), // Jan 1, 2000
+        maxDate: new Date(2100, 11, 31) // Dec 31, 2100
       }
     });
+    
+    // Add event listener for when dashcam time is selected using the subscribe method
+    dashcamTimePicker.subscribe(tempusDominus.Namespace.events.change, function(e) {
+      // Update real time input to current date/time when dashcam time is selected
+      if (dashcamRealTimeInput && realTimePicker) {
+        const now = new Date();
+        realTimePicker.dates.setValue(tempusDominus.DateTime.convert(now));
+      }
+    });
+    
+    // Add readonly attribute to prevent editing
+    dashcamTimeInput.setAttribute('readonly', 'readonly');
   }
   
   // Ensure the helper is in the DOM before trying to get styles
