@@ -342,3 +342,62 @@ h5{
   padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+/* Horizontally scrollable button group container */
+.btn-group-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar but keep functionality */
+.btn-group-container::-webkit-scrollbar {
+    height: 4px;
+}
+
+.btn-group-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+/* Simple button group styling - back to original */
+.btn-group-container .btn-group {
+    display: flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.btn-group-container .btn-outline-primary {
+    font-size: var(--button-font-size);
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-group-container .btn-group .btn-outline-primary {
+    border-radius: 0;
+}
+
+
+.btn-group-container .btn-group .btn-outline-primary:not(:last-child) {
+    margin-right: -1px;
+    border-right: 0;
+}
+
+
+/* Mobile optimizations */
+@media (max-width: 576px) {
+    
+    .btn-group-container .btn-outline-primary {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-group-container .btn-outline-primary {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.7rem;
+    }
+}

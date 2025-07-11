@@ -10,7 +10,7 @@ let requestTypeSelect, infoToReadBtn, infoToReadSection, infoToReadText, infoToR
 let infoToReadButtonContainer, reqForServiceFormButtons;
 let reqstaffFullNameInput, reqstaffPositionInput, reqstaffOfficeLocationInput;
 let clientFullNameInput, clientAddressInput, clientDobInput, clientVehicleRegInput, clientVehicleDescInput;
-let issueDescriptionInput, issueLocationInput, issueDateTimeInput, issueTimeTakenInput;
+let issueDescriptionInput, issueLocationInput, issueDateTimeInput;
 
 function initializeReqForServiceDOMElements() {
   reqForServiceStaffSigCanvasEl = document.getElementById("reqForServiceStaffSigCanvas");
@@ -40,7 +40,6 @@ function initializeReqForServiceDOMElements() {
   issueDescriptionInput = document.getElementById('issueDescription');
   issueLocationInput = document.getElementById('issueLocation');
   issueDateTimeInput = document.getElementById('issueDateTime');
-  issueTimeTakenInput = document.getElementById('issueTimeTaken');
 }
 
 // Function to check if all required fields are filled
@@ -56,8 +55,7 @@ function checkRequiredFields() {
     clientVehicleDescInput,
     issueDescriptionInput,
     issueLocationInput,
-    issueDateTimeInput,
-    issueTimeTakenInput
+    issueDateTimeInput
   ];
   
   return requiredFields.every(field => field.value.trim() !== '');
@@ -236,30 +234,6 @@ function showFormFields() {
   updateInfoToReadButtonVisibility(); // Check if fields are already filled
 }
 
-// Function to update Info to Read button visibility
-function updateInfoToReadButtonVisibility() {
-  const requiredFields = [
-    reqstaffFullNameInput,
-    reqstaffPositionInput,
-    reqstaffOfficeLocationInput,
-    clientFullNameInput,
-    clientAddressInput,
-    clientDobInput,
-    clientVehicleRegInput,
-    clientVehicleDescInput,
-    issueDescriptionInput,
-    issueLocationInput,
-    issueDateTimeInput,
-    issueTimeTakenInput
-  ];
-  
-  const allFieldsFilled = requiredFields.every(field => field && field.value.trim() !== '');
-  
-  if (infoToReadButtonContainer) {
-    infoToReadButtonContainer.style.display = allFieldsFilled ? 'block' : 'none';
-  }
-}
-
 // Function to populate individual info to read text elements
 function populateInfoToReadTexts() {
   // Get current date and time
@@ -387,8 +361,7 @@ window.initializeReqForServiceForm = function() {
     clientVehicleDescInput,
     issueDescriptionInput,
     issueLocationInput,
-    issueDateTimeInput,
-    issueTimeTakenInput
+    issueDateTimeInput
   ];
   
   requiredFields.forEach(field => {
