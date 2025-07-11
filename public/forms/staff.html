@@ -1,0 +1,92 @@
+<form method="POST" id="staffForm">
+  <div class="mb-3">
+    <input type="text" class="form-control" id="staffFullName" name="fullName" placeholder="Full Name" required>
+  </div>
+
+  <!-- Add Subject field -->
+  <div class="mb-3">
+    <input type="text" class="form-control" id="staffSubject" name="subject" placeholder="Subject" required>
+  </div>
+  
+  <!-- Add Place field -->
+  <div class="mb-3">
+    <input type="text" class="form-control" id="staffPlace" name="place" placeholder="Place" required>
+  </div>
+
+  <div class="mb-3">
+    <input type="number" class="form-control" id="staffAge" name="age" placeholder="Age" required>
+  </div>
+
+  <div class="mb-3">
+    <select class="form-select" id="staffReportTemplate" name="staffReport" title="Staff Report" required>
+      <option value="" selected>Staff Report Template</option>
+      <option value="staff1">Staff 1</option>
+      <option value="staff2">Staff 2</option>
+      <option value="staff3">Staff 3</option>
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <textarea class="form-control" id="staffReportNotes" name="reportNotes" rows="5" placeholder="Type your report notes here..." required></textarea>
+  </div>
+
+  <div class="mb-3">
+    <select class="form-select" id="staffType" name="staffType" title="Staff Type" required>
+      <option value="" selected>Position</option> 
+      <option value="supervisor">Supervisor</option>
+      <option value="manager">Manager</option>
+      <option value="director">Director</option>
+      <option value="sales">Sales</option> 
+    </select>
+  </div>
+
+  <!-- Office field for staff -->
+  <div class="mb-3">
+    <input type="text" class="form-control" id="staffOffice" name="staffOffice" placeholder="Office Location">
+  </div>
+
+  <div class="mb-3 position-relative sigCanvas-container">
+    <canvas id="staffSigCanvas" class="sigCanvas"></canvas>
+    <div class="mt-1 text-end">
+      <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="staffSigCanvas">Clear</button>
+    </div>
+  </div>
+
+  <div class="witness-section"> 
+    <div class="mb-3">
+      <input type="text" class="form-control" id="witnessName" name="witnessName" placeholder="Witness Name">
+    </div>
+    
+    <div class="mb-3">
+      <select class="form-select" id="witnessPosition" name="witnessPosition" title="Witness Position">
+        <option value="" selected>Witness Position</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="manager">Manager</option>
+        <option value="director">Director</option>
+        <option value="sales">Sales</option>
+      </select>
+    </div>                
+
+    <!-- Add Office field for witness -->
+    <div class="mb-3">
+      <input type="text" class="form-control" id="witnessOffice" name="witnessOffice" placeholder="Office Location">
+    </div>
+
+    <div class="mb-3 position-relative sigCanvas-container">
+      <canvas id="witnessSigCanvas" class="sigCanvas"></canvas>
+      <div class="mt-1 text-end">
+        <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="witnessSigCanvas">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="hidden" name="staffSignature" id="staffSignature">
+  <input type="hidden" name="witnessSignature" id="witnessSignature">
+  <input type="hidden" name="userType" value="staff">
+  <input type="hidden" name="witnessPosition" id="hiddenWitnessPosition">
+
+  <div class="mt-3">
+    <button type="submit" class="btn btn-primary w-100 mb-2">Generate PDF</button>
+    <button type="button" id="resetStaffForm" class="btn btn-secondary w-100">Reset All</button>
+  </div>
+</form>

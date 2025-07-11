@@ -1,0 +1,154 @@
+<form method="POST" id="reqForServiceForm">
+  <!-- Main Form Sections Container -->
+  <div id="mainFormSections">
+    <!-- Request Type Selection -->
+    <div class="mb-3">
+      <select class="form-select" id="requestType" name="requestType" title="Request Type" autocomplete="off" required>
+        <option value="" selected>Type of Request</option>
+        <option value="serious">Serious</option>
+        <option value="normal">Normal</option>
+      </select>
+    </div>
+    
+    <!-- Staff Information -->
+    <div class="mb-3">
+      <input type="text" class="form-control" id="reqstaffFullName" name="reqstaffFullName" placeholder="Staff Full Name" autocomplete="off" required>
+    </div>
+    
+    <div class="mb-3">
+      <select class="form-select" id="reqstaffPosition" name="reqstaffPosition" title="Staff Position" autocomplete="off" required>
+        <option value="" selected>Staff Position</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="manager">Manager</option>
+        <option value="director">Director</option>
+        <option value="sales">Sales</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <input type="text" class="form-control" id="reqstaffOfficeLocation" name="reqstaffOfficeLocation" placeholder="Staff Office Location" autocomplete="off" required>
+    </div>
+    
+    <!-- Client Information -->
+    <div class="mb-3">
+      <input type="text" class="form-control" id="clientFullName" name="clientFullName" placeholder="Client Full Name" autocomplete="off" required>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" class="form-control" id="clientAddress" name="clientAddress" placeholder="Client Address" autocomplete="off" required>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" class="form-control" id="clientDob" name="clientDob" placeholder="Client Date of Birth (DD/MM/YYYY)" autocomplete="off" required>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" class="form-control" id="clientVehicleReg" name="clientVehicleReg" placeholder="Client Vehicle Registration" autocomplete="off" required>
+    </div>
+    
+    <div class="mb-3">
+      <textarea class="form-control" id="clientVehicleDesc" name="clientVehicleDesc" rows="5" placeholder="Client Vehicle Description" autocomplete="off" required></textarea>
+    </div>
+
+    <div class="mb-3">
+      <textarea class="form-control" id="issueDescription" name="issueDescription" rows="5" placeholder="Issue Description" autocomplete="off" required></textarea>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" class="form-control" id="issueLocation" name="issueLocation" placeholder="Issue Location" autocomplete="off" required>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" class="form-control" id="issueDateTime" name="issueDateTime" placeholder="Issue Date and Time" autocomplete="off" required>
+    </div>
+    
+    <div class="mb-3">
+      <input type="text" class="form-control" id="issueTimeTaken" name="issueTimeTaken" placeholder="Issue Time Taken" autocomplete="off" required>
+    </div>
+  </div>
+  
+  <!-- Info to Read Button (initially hidden) -->
+  <div id="infoToReadButtonContainer" class="mb-3" style="display: none;">
+    <button type="button" id="infoToReadButton" class="btn btn-primary w-100">Info to Read</button>
+  </div>
+  
+  <!-- Info to Read Section (initially hidden) -->
+  <div id="infoToReadSection" style="display: none;">
+    <!-- Remove the duplicate header section -->
+    
+    <!-- Introduction Section -->
+    <div class="mb-3">
+      <small id="timeAndStaffText" class="text-muted mb-3"></small>
+    </div>
+    
+    <!-- Questions & Responses Section -->
+    <div class="mb-3">
+      <!-- Client Identity Question -->
+      <div class="question-card mb-3">
+        <small id="clientIdentityText" class="text-muted mb-2"></small>
+        <input type="text" class="form-control" id="clientIdentityReply" name="clientIdentityReply" placeholder="Type your reply here..." autocomplete="off" required>
+      </div>
+      
+      <!-- Vehicle Ownership Question -->
+      <div class="question-card mb-3">
+        <small id="vehicleOwnershipText" class="text-muted mb-2"></small>
+        <input type="text" class="form-control" id="vehicleOwnershipReply" name="vehicleOwnershipReply" placeholder="Type your reply here..." autocomplete="off" required>
+      </div>
+      
+      <!-- Service Explanation -->
+      <div class="mb-3">
+        <small id="serviceExplanationText" class="text-muted mb-3"></small>
+      </div>
+      
+      <!-- Fees Understanding Question -->
+      <div class="question-card mb-3">
+        <small id="feesUnderstandingText" class="text-muted mb-2">There may be fees associated with this service which will be explained in writing to you. Do you understand that?</small>
+        <input type="text" class="form-control" id="feesUnderstandingReply" name="feesUnderstandingReply" placeholder="Type your reply here..." autocomplete="off" required>
+      </div>
+      
+      <!-- Additional Information Request -->
+      <div class="question-card mb-3">
+        <small id="additionalInfoText" class="text-muted"></small>
+        <textarea class="form-control mb-3" id="additionalInfoReply" name="additionalInfoReply" rows="3" placeholder="Type your reply here..." autocomplete="off" required></textarea>
+      </div>
+      
+      <!-- Final Instruction -->
+      <div class="mb-3">
+        <small class="text-muted">I will now ask that you sign the below.</small>
+      </div>
+    </div>
+    
+    <!-- Signature Sections -->
+    <div class="mt-3">
+      <!-- Staff Signature -->
+      <div class="mb-3">
+        <h6 class="mb-3">Staff Signature</h6>
+        <div class="mb-3 position-relative sigCanvas-container">
+          <canvas id="reqForServiceStaffSigCanvas" class="sigCanvas"></canvas>
+          <div class="mt-1 text-end">
+            <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="reqForServiceStaffSigCanvas">Clear</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Customer Signature -->
+      <div class="mb-3">
+        <h6 class="mb-3">Customer Signature</h6>
+        <div class="mb-3 position-relative sigCanvas-container">
+          <canvas id="reqForServiceCustomerSigCanvas" class="sigCanvas"></canvas>
+          <div class="mt-1 text-end">
+            <button type="button" class="btn btn-link btn-sm clear-sig-btn" data-canvas-id="reqForServiceCustomerSigCanvas">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <input type="hidden" name="reqForServiceStaffSignature" id="reqForServiceStaffSignature">
+  <input type="hidden" name="reqForServiceCustomerSignature" id="reqForServiceCustomerSignature">
+  <input type="hidden" name="userType" value="reqforservice">
+  
+  <div class="mt-3" id="reqForServiceFormButtons">
+    <button type="submit" class="btn btn-primary w-100 mb-3">Generate PDF</button>
+    <button type="button" id="resetReqForServiceForm" class="btn btn-secondary w-100">Reset All</button>
+  </div>
+</form>
