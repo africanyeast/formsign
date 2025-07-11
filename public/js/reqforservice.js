@@ -71,15 +71,7 @@ function updateInfoToReadButtonVisibility() {
 }
 
 function prepareReqForServiceFormData() {
-  if (reqForServiceSignatureManager.isCanvasEmpty('reqForServiceStaffSigCanvas')) {
-    alert("Staff signature is required.");
-    document.getElementById("reqForServiceStaffSignature").value = '';
-    return false;
-  }
-  
-  document.getElementById("reqForServiceStaffSignature").value = reqForServiceSignatureManager.getSignatureDataURL('reqForServiceStaffSigCanvas');
-  
-  // Handle Customer Signature (not witness)
+  // Handle Customer Signature first
   if (reqForServiceSignatureManager.isCanvasEmpty('reqForServiceCustomerSigCanvas')) {
     alert("Customer signature is required.");
     document.getElementById("reqForServiceCustomerSignature").value = '';
@@ -87,6 +79,15 @@ function prepareReqForServiceFormData() {
   }
   
   document.getElementById("reqForServiceCustomerSignature").value = reqForServiceSignatureManager.getSignatureDataURL('reqForServiceCustomerSigCanvas');
+  
+  // Then check staff signature
+  if (reqForServiceSignatureManager.isCanvasEmpty('reqForServiceStaffSigCanvas')) {
+    alert("Staff signature is required.");
+    document.getElementById("reqForServiceStaffSignature").value = '';
+    return false;
+  }
+  
+  document.getElementById("reqForServiceStaffSignature").value = reqForServiceSignatureManager.getSignatureDataURL('reqForServiceStaffSigCanvas');
 
   return true;
 }
@@ -390,6 +391,12 @@ function initializeSignaturePads() {
     return;
   }
   
+  // Initialize customer signature canvas first
+  const customerCanvas = document.getElementById('reqForServiceCustomerSigCanvas');
+  if (customerCanvas) {
+    reqForServiceSignatureManager.initializeSignaturePad(customerCanvas);
+  }
+  
   // Initialize staff signature canvas
   const staffCanvas = document.getElementById('reqForServiceStaffSigCanvas');
   if (staffCanvas) {
@@ -400,12 +407,6 @@ function initializeSignaturePads() {
     if (staffPosition) {
       reqForServiceSignatureManager.updatePenColor('reqForServiceStaffSigCanvas', staffPosition);
     }
-  }
-  
-  // Initialize customer signature canvas
-  const customerCanvas = document.getElementById('reqForServiceCustomerSigCanvas');
-  if (customerCanvas) {
-    reqForServiceSignatureManager.initializeSignaturePad(customerCanvas);
   }
   
   // Setup clear buttons
