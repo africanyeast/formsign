@@ -66,7 +66,7 @@ class FormLoader {
 
     showFormHeading(formType) {
         // Hide all headings
-        const headings = ['staff', 'customer', 'dashcam', 'reqforservice'];
+        const headings = ['staff', 'customer', 'dashcam', 'reqforservice', 'resources'];
         headings.forEach(type => {
             const heading = document.getElementById(`${type}FormHeading`);
             if (heading) {
